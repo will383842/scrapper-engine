@@ -23,6 +23,12 @@ def get_client(platform: str) -> "MailWizzClient":
         else:
             raise ValueError(f"Unknown platform: {platform}")
 
+        if not api_url or not api_key:
+            raise ValueError(
+                f"MailWizz not configured for platform '{platform}': "
+                f"missing MAILWIZZ_{platform.upper().replace('-', '_')}_API_URL or _API_KEY"
+            )
+
         _clients[platform] = MailWizzClient(api_url, api_key)
     return _clients[platform]
 

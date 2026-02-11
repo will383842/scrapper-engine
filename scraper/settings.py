@@ -7,15 +7,16 @@ BOT_NAME = "scraper-pro"
 SPIDER_MODULES = ["scraper.spiders"]
 NEWSPIDER_MODULE = "scraper.spiders"
 
-# Respect robots.txt by default
-ROBOTSTXT_OBEY = True
+# ROBOTSTXT_OBEY must be False: Google's robots.txt blocks /search,
+# which would prevent Google Search and Google Maps spiders from working.
+ROBOTSTXT_OBEY = False
 
 # Concurrent requests (conservative for proxy usage)
-CONCURRENT_REQUESTS = 8
-CONCURRENT_REQUESTS_PER_DOMAIN = 2
+CONCURRENT_REQUESTS = int(os.getenv("CONCURRENT_REQUESTS", "8"))
+CONCURRENT_REQUESTS_PER_DOMAIN = int(os.getenv("CONCURRENT_REQUESTS_PER_DOMAIN", "2"))
 
 # Download delay between requests (seconds)
-DOWNLOAD_DELAY = 2.0
+DOWNLOAD_DELAY = float(os.getenv("DOWNLOAD_DELAY", "2.0"))
 RANDOMIZE_DOWNLOAD_DELAY = True
 
 # Disable cookies to avoid tracking
@@ -34,6 +35,8 @@ ITEM_PIPELINES = {
     "scraper.utils.pipelines.DeduplicationPipeline": 100,
     "scraper.utils.pipelines.ValidationPipeline": 200,
     "scraper.utils.pipelines.PostgresPipeline": 300,
+    "scraper.utils.pipelines.ArticlePipeline": 350,
+    "scraper.utils.pipelines.ProgressTrackingPipeline": 400,
 }
 
 # Auto-throttle
@@ -52,7 +55,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FORMAT = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
 
 # Timeouts
-DOWNLOAD_TIMEOUT = 30
+DOWNLOAD_TIMEOUT = int(os.getenv("DOWNLOAD_TIMEOUT", "30"))
 
 # Cache (avoid re-downloading during development)
 HTTPCACHE_ENABLED = False

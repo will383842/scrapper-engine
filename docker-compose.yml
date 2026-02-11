@@ -84,6 +84,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      scraper:
+        condition: service_started
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -91,6 +93,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-scraper_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
+      API_HMAC_SECRET: ${API_HMAC_SECRET}
+      SCRAPER_API_URL: http://scraper:8000
     ports:
       - "127.0.0.1:8501:8501"
 

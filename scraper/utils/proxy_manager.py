@@ -9,6 +9,15 @@ import time
 logger = logging.getLogger(__name__)
 
 
+def _mask_proxy(proxy_url: str) -> str:
+    """Mask credentials in proxy URL for logging."""
+    if "@" in proxy_url:
+        prefix = proxy_url.split("://")[0] if "://" in proxy_url else "http"
+        host = proxy_url.split("@")[-1]
+        return f"{prefix}://***@{host}"
+    return proxy_url
+
+
 class ProxyManager:
     """Manages proxy rotation with weighted selection and circuit breaker."""
 
@@ -52,7 +61,10 @@ class ProxyManager:
                 session_id = random.randint(1, self.pool_size)
                 proxy_url = f"http://{self.user}-session-{session_id}:{self.password}@{self.endpoint}"
                 if not self._is_in_cooldown(proxy_url):
-                    break
+                    return proxy_url
+            # All attempts in cooldown
+            logger.warning("All proxy sessions in cooldown, proceeding without proxy")
+            return None
 
         return proxy_url
 
@@ -70,7 +82,7 @@ class ProxyManager:
             cooldown_minutes = self.cooldown_steps[cooldown_index]
             self._cooldown_until[proxy_url] = time.time() + (cooldown_minutes * 60)
             logger.warning(
-                f"Proxy {proxy_url[:50]}... in cooldown for {cooldown_minutes}min "
+                f"Proxy {_mask_proxy(proxy_url)} in cooldown for {cooldown_minutes}min "
                 f"({failures} failures)"
             )
 

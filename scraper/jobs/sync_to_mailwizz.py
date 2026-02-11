@@ -8,7 +8,9 @@ import logging
 import sys
 
 from scraper.database import get_db_session
+from sqlalchemy import text
 from scraper.integrations.mailwizz_client import get_client
+from scraper.integrations.warmup_guard import get_daily_quota_remaining
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,19 +23,30 @@ MAX_RETRIES = 3
 
 
 def sync_contacts_to_mailwizz():
-    """Send validated contacts to MailWizz lists."""
-    stats = {"success": 0, "failed": 0, "retries": 0}
+    """Send validated contacts to MailWizz lists, respecting warmup quotas."""
+    stats = {"success": 0, "failed": 0, "retries": 0, "held_warmup": 0}
+
+    # Check warmup quota before syncing
+    quota_remaining = get_daily_quota_remaining()
+    effective_limit = BATCH_SIZE
+
+    if quota_remaining is not None:
+        if quota_remaining <= 0:
+            logger.info("Warmup quota exhausted for today, skipping sync")
+            return stats
+        effective_limit = min(BATCH_SIZE, quota_remaining)
+        logger.info(f"Warmup guard: limiting batch to {effective_limit} contacts")
 
     with get_db_session() as session:
         contacts = session.execute(
-            """
+            text("""
             SELECT * FROM validated_contacts
             WHERE status = 'ready_for_mailwizz'
             AND retry_count < :max_retries
             ORDER BY created_at ASC
             LIMIT :limit
-            """,
-            {"max_retries": MAX_RETRIES, "limit": BATCH_SIZE},
+            """),
+            {"max_retries": MAX_RETRIES, "limit": effective_limit},
         ).mappings().all()
 
         logger.info(f"Syncing {len(contacts)} contacts to MailWizz...")
@@ -78,24 +91,24 @@ def sync_contacts_to_mailwizz():
 
             if result["success"]:
                 session.execute(
-                    """
+                    text("""
                     UPDATE validated_contacts
                     SET status = 'sent_to_mailwizz',
                         mailwizz_subscriber_id = :sub_id,
                         sent_to_mailwizz_at = NOW(),
                         updated_at = NOW()
                     WHERE id = :id
-                    """,
+                    """),
                     {"sub_id": result.get("subscriber_uid"), "id": contact["id"]},
                 )
 
                 # Log success
                 session.execute(
-                    """
+                    text("""
                     INSERT INTO mailwizz_sync_log
                         (contact_id, platform, list_id, status, response)
                     VALUES (:cid, :platform, :list_id, 'success', :response)
-                    """,
+                    """),
                     {
                         "cid": contact["id"],
                         "platform": contact["platform"],
@@ -112,14 +125,14 @@ def sync_contacts_to_mailwizz():
                 new_status = "failed" if retry_count >= MAX_RETRIES else "ready_for_mailwizz"
 
                 session.execute(
-                    """
+                    text("""
                     UPDATE validated_contacts
                     SET status = :status,
                         retry_count = :retry,
                         last_error = :error,
                         updated_at = NOW()
                     WHERE id = :id
-                    """,
+                    """),
                     {
                         "status": new_status,
                         "retry": retry_count,
@@ -130,11 +143,11 @@ def sync_contacts_to_mailwizz():
 
                 # Log failure
                 session.execute(
-                    """
+                    text("""
                     INSERT INTO mailwizz_sync_log
                         (contact_id, platform, list_id, status, response)
                     VALUES (:cid, :platform, :list_id, 'failed', :response)
-                    """,
+                    """),
                     {
                         "cid": contact["id"],
                         "platform": contact["platform"],
@@ -157,4 +170,8 @@ def sync_contacts_to_mailwizz():
 
 
 if __name__ == "__main__":
-    sync_contacts_to_mailwizz()
+    try:
+        sync_contacts_to_mailwizz()
+    except Exception as e:
+        logger.critical(f"MailWizz sync job crashed: {e}", exc_info=True)
+        sys.exit(1)

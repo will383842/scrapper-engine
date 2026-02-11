@@ -26,6 +26,42 @@
           "auto_tags": ["medecin", "professionnel", "sante"],
           "template_default": "partenariat_medecin"
         },
+        "comptable": {
+          "list_id": 5,
+          "list_name": "Comptables et Fiscalistes",
+          "auto_tags": ["comptable", "professionnel", "fiscal"],
+          "template_default": "partenariat_comptable"
+        },
+        "traducteur": {
+          "list_id": 6,
+          "list_name": "Traducteurs et Interpretes",
+          "auto_tags": ["traducteur", "professionnel", "langues"],
+          "template_default": "partenariat_traducteur"
+        },
+        "agent_immo": {
+          "list_id": 7,
+          "list_name": "Agents Immobiliers Internationaux",
+          "auto_tags": ["immobilier", "professionnel", "relocation"],
+          "template_default": "partenariat_agent_immo"
+        },
+        "demenageur": {
+          "list_id": 8,
+          "list_name": "Demenageurs Internationaux",
+          "auto_tags": ["demenagement", "professionnel", "relocation"],
+          "template_default": "partenariat_demenageur"
+        },
+        "banquier": {
+          "list_id": 9,
+          "list_name": "Banquiers et Conseillers Financiers",
+          "auto_tags": ["banque", "professionnel", "finance"],
+          "template_default": "partenariat_banquier"
+        },
+        "consultant": {
+          "list_id": 11,
+          "list_name": "Consultants Expatriation",
+          "auto_tags": ["consultant", "professionnel", "conseil"],
+          "template_default": "partenariat_consultant"
+        },
         "default": {
           "list_id": 10,
           "list_name": "Contacts Divers SOS-Expat",

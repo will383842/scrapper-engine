@@ -2,8 +2,9 @@
 
 import os
 from contextlib import contextmanager
+from urllib.parse import quote_plus
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 _engine = None
@@ -16,7 +17,10 @@ def get_database_url() -> str:
     db = os.getenv("POSTGRES_DB", "scraper_db")
     user = os.getenv("POSTGRES_USER", "scraper_admin")
     password = os.getenv("POSTGRES_PASSWORD", "")
-    return f"postgresql://{user}:{password}@{host}:{port}/{db}"
+    if not password:
+        import warnings
+        warnings.warn("POSTGRES_PASSWORD is empty - DB connection will likely fail")
+    return f"postgresql://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{db}"
 
 
 def get_engine():

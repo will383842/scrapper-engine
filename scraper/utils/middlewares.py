@@ -41,11 +41,24 @@ class ProxyMiddleware:
         proxy = pm.get_proxy()
         if proxy:
             request.meta["proxy"] = proxy
-            logger.debug(f"Using proxy: {proxy} for {request.url}")
+            masked = proxy.split("@")[-1] if "@" in proxy else proxy
+            logger.debug(f"Using proxy: ***@{masked} for {request.url}")
+
+    def process_response(self, request, response, spider):
+        proxy = request.meta.get("proxy")
+        if proxy:
+            pm = self._get_proxy_manager()
+            if response.status < 400:
+                pm.report_success(proxy)
+            elif response.status in (403, 407, 429, 503):
+                pm.report_failure(proxy)
+                logger.debug(f"Proxy-related HTTP {response.status} for {request.url}")
+        return response
 
     def process_exception(self, request, exception, spider):
         proxy = request.meta.get("proxy")
         if proxy:
             pm = self._get_proxy_manager()
             pm.report_failure(proxy)
-            logger.warning(f"Proxy failed: {proxy} - {exception}")
+            masked = proxy.split("@")[-1] if "@" in proxy else proxy
+            logger.warning(f"Proxy failed: ***@{masked} - {exception}")

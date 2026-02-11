@@ -29,6 +29,59 @@ CATEGORY_RULES = {
         "keywords": [
             "medecin", "doctor", "clinic", "clinique", "hopital",
             "hospital", "dentist", "dentiste", "health", "sante",
+            "generaliste", "specialiste", "chirurgien", "surgeon",
+        ],
+        "sources": ["google_maps", "google_search", "custom_urls"],
+    },
+    "comptable": {
+        "keywords": [
+            "comptable", "accountant", "accounting", "comptabilite",
+            "expert-comptable", "expert comptable", "bookkeeper",
+            "cabinet comptable", "fiscal", "fiscaliste", "tax advisor",
+            "steuerberater", "buchhalter",
+        ],
+        "sources": ["google_maps", "google_search", "custom_urls"],
+    },
+    "traducteur": {
+        "keywords": [
+            "traducteur", "translator", "traduction", "translation",
+            "interprete", "interpreter", "sworn translator",
+            "traducteur assermente", "certified translator",
+            "bureau de traduction", "translation agency",
+            "ubersetzer", "traductor",
+        ],
+        "sources": ["google_maps", "google_search", "custom_urls"],
+    },
+    "agent_immo": {
+        "keywords": [
+            "agent immobilier", "real estate", "immobilier", "realtor",
+            "agence immobiliere", "property", "estate agent",
+            "relocation", "relocation agent", "housing",
+            "makler", "inmobiliaria",
+        ],
+        "sources": ["google_maps", "google_search", "custom_urls"],
+    },
+    "demenageur": {
+        "keywords": [
+            "demenageur", "demenagement", "moving company", "mover",
+            "international moving", "relocation", "demenagement international",
+            "removals", "umzug", "mudanza",
+        ],
+        "sources": ["google_maps", "google_search", "custom_urls"],
+    },
+    "banquier": {
+        "keywords": [
+            "banquier", "banker", "banque", "bank", "private banking",
+            "gestion patrimoine", "wealth management", "conseiller bancaire",
+            "financial advisor", "conseiller financier",
+        ],
+        "sources": ["google_maps", "google_search", "custom_urls"],
+    },
+    "consultant": {
+        "keywords": [
+            "consultant", "consulting", "conseil", "advisory",
+            "cabinet conseil", "consulting firm", "strategy",
+            "consultant expatriation", "mobility consultant",
         ],
         "sources": ["google_maps", "google_search", "custom_urls"],
     },
@@ -46,6 +99,13 @@ CATEGORY_RULES = {
         ],
         "sources": ["google_search", "custom_urls"],
     },
+    "youtubeur": {
+        "keywords": [
+            "youtubeur", "youtuber", "youtube", "chaine youtube",
+            "youtube channel", "vlogger", "vlog",
+        ],
+        "sources": ["google_search", "custom_urls"],
+    },
     "admin_groupe": {
         "keywords": [
             "admin", "administrator", "moderator", "groupe",
@@ -56,7 +116,10 @@ CATEGORY_RULES = {
 }
 
 # Platform routing
-SOS_EXPAT_CATEGORIES = {"avocat", "assureur", "notaire", "medecin", "comptable"}
+SOS_EXPAT_CATEGORIES = {
+    "avocat", "assureur", "notaire", "medecin", "comptable",
+    "traducteur", "agent_immo", "demenageur", "banquier", "consultant",
+}
 ULIXAI_CATEGORIES = {"blogueur", "influenceur", "admin_groupe", "youtubeur"}
 
 

@@ -1,0 +1,4 @@
+# Force LF line endings for scripts that run in Linux containers
+*.sh text eol=lf
+crontab text eol=lf
+entrypoint.sh text eol=lf

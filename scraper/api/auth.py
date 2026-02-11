@@ -12,7 +12,7 @@ async def verify_hmac(request: Request):
     """Verify HMAC-SHA256 signature on incoming API requests."""
     secret = os.getenv("API_HMAC_SECRET")
     if not secret:
-        raise HTTPException(status_code=500, detail="API secret not configured")
+        raise HTTPException(status_code=503, detail="API secret not configured")
 
     signature = request.headers.get("X-Signature")
     timestamp = request.headers.get("X-Timestamp")

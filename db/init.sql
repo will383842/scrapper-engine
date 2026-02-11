@@ -17,6 +17,12 @@ CREATE TABLE scraping_jobs (
     pages_scraped INTEGER DEFAULT 0,
     contacts_extracted INTEGER DEFAULT 0,
     errors_count INTEGER DEFAULT 0,
+    -- Checkpoint / resume support
+    checkpoint_data JSONB DEFAULT '{}',
+    -- For google_search/maps: {"last_page": 30, "results_collected": 45}
+    -- For custom_urls: {"completed_urls": ["url1","url2"], "current_index": 3}
+    resumed_from_job_id INTEGER,
+    resume_count INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     started_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
@@ -29,7 +35,7 @@ CREATE INDEX idx_jobs_created_at ON scraping_jobs(created_at DESC);
 -- Contacts bruts scrapes
 CREATE TABLE scraped_contacts (
     id SERIAL PRIMARY KEY,
-    email VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
     name VARCHAR(255),
     phone VARCHAR(50),
     website VARCHAR(500),
@@ -164,3 +170,55 @@ CREATE TABLE error_logs (
 
 CREATE INDEX idx_errors_job ON error_logs(job_id);
 CREATE INDEX idx_errors_created ON error_logs(created_at DESC);
+
+-- WHOIS domain intelligence
+CREATE TABLE whois_cache (
+    id SERIAL PRIMARY KEY,
+    domain VARCHAR(255) UNIQUE NOT NULL,
+    registrar VARCHAR(255),
+    registrar_url VARCHAR(500),
+    creation_date TIMESTAMPTZ,
+    expiration_date TIMESTAMPTZ,
+    updated_date TIMESTAMPTZ,
+    whois_private BOOLEAN DEFAULT FALSE,
+    cloudflare_protected BOOLEAN DEFAULT FALSE,
+    registrant_name VARCHAR(255),
+    registrant_org VARCHAR(255),
+    registrant_email VARCHAR(255),
+    registrant_country VARCHAR(5),
+    name_servers JSONB DEFAULT '[]',
+    raw_whois TEXT,
+    lookup_status VARCHAR(20) DEFAULT 'success',
+    looked_up_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_whois_domain ON whois_cache(domain);
+CREATE INDEX idx_whois_registrar ON whois_cache(registrar);
+
+-- Articles de blog scrapes
+CREATE TABLE scraped_articles (
+    id SERIAL PRIMARY KEY,
+    job_id INTEGER REFERENCES scraping_jobs(id) ON DELETE SET NULL,
+    url TEXT UNIQUE NOT NULL,
+    title TEXT,
+    content_text TEXT,
+    content_html TEXT,
+    excerpt TEXT,
+    author TEXT,
+    date_published TIMESTAMPTZ,
+    categories TEXT[] DEFAULT '{}',
+    tags TEXT[] DEFAULT '{}',
+    external_links JSONB DEFAULT '[]',
+    internal_links JSONB DEFAULT '[]',
+    featured_image_url TEXT,
+    meta_description TEXT,
+    word_count INTEGER DEFAULT 0,
+    language VARCHAR(10),
+    domain TEXT,
+    scraped_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_articles_job_id ON scraped_articles(job_id);
+CREATE INDEX idx_articles_domain ON scraped_articles(domain);
+CREATE INDEX idx_articles_scraped_at ON scraped_articles(scraped_at DESC);
+CREATE INDEX idx_articles_language ON scraped_articles(language);
