@@ -1,0 +1,9 @@
+# Scraper-Pro Cron Jobs
+# Validation: process pending contacts every hour
+0 * * * * cd /app && python -m scraper.jobs.process_contacts >> /app/logs/process.log 2>&1
+
+# MailWizz sync: inject validated contacts every hour (offset 30 min)
+30 * * * * cd /app && python -m scraper.jobs.sync_to_mailwizz >> /app/logs/mailwizz_sync.log 2>&1
+
+# Proxy health check every 15 minutes
+*/15 * * * * cd /app && python -m scraper.utils.proxy_manager --health-check >> /app/logs/proxy_health.log 2>&1

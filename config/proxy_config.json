@@ -1,0 +1,37 @@
+{
+  "providers": {
+    "oxylabs": {
+      "endpoint": "pr.oxylabs.io:7777",
+      "auth_type": "user_pass",
+      "pool_size": 20,
+      "type": "datacenter"
+    },
+    "brightdata": {
+      "endpoint": "brd.superproxy.io:22225",
+      "auth_type": "user_pass",
+      "pool_size": 20,
+      "type": "datacenter"
+    },
+    "smartproxy": {
+      "endpoint": "gate.smartproxy.com:7000",
+      "auth_type": "user_pass",
+      "pool_size": 20,
+      "type": "datacenter"
+    }
+  },
+  "rotation": {
+    "mode": "weighted_random",
+    "sticky_session_seconds": 180,
+    "max_consecutive_failures": 5,
+    "cooldown_minutes": [5, 10, 20, 30],
+    "max_cooldowns_before_blacklist": 5
+  },
+  "rate_limiting": {
+    "default_delay_seconds": 2.0,
+    "per_domain_limits": {
+      "google.com": 5.0,
+      "google.fr": 5.0,
+      "maps.google.com": 5.0
+    }
+  }
+}

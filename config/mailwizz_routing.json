@@ -1,0 +1,72 @@
+{
+  "platforms": {
+    "sos-expat": {
+      "lists": {
+        "avocat": {
+          "list_id": 1,
+          "list_name": "Avocats Internationaux",
+          "auto_tags": ["avocat", "professionnel", "juridique"],
+          "template_default": "partenariat_avocat"
+        },
+        "assureur": {
+          "list_id": 2,
+          "list_name": "Assureurs Expatries",
+          "auto_tags": ["assureur", "professionnel", "assurance"],
+          "template_default": "partenariat_assureur"
+        },
+        "notaire": {
+          "list_id": 3,
+          "list_name": "Notaires Internationaux",
+          "auto_tags": ["notaire", "professionnel", "juridique"],
+          "template_default": "partenariat_notaire"
+        },
+        "medecin": {
+          "list_id": 4,
+          "list_name": "Medecins Francophones",
+          "auto_tags": ["medecin", "professionnel", "sante"],
+          "template_default": "partenariat_medecin"
+        },
+        "default": {
+          "list_id": 10,
+          "list_name": "Contacts Divers SOS-Expat",
+          "auto_tags": ["autre"],
+          "template_default": null
+        }
+      }
+    },
+    "ulixai": {
+      "lists": {
+        "blogueur": {
+          "list_id": 1,
+          "list_name": "Blogueurs Voyage",
+          "auto_tags": ["blogueur", "content_creator", "voyage"],
+          "template_default": "affiliation_75pct"
+        },
+        "influenceur": {
+          "list_id": 2,
+          "list_name": "Influenceurs Reseaux Sociaux",
+          "auto_tags": ["influenceur", "social_media", "content_creator"],
+          "template_default": "affiliation_75pct"
+        },
+        "admin_groupe": {
+          "list_id": 3,
+          "list_name": "Admins Groupes Facebook",
+          "auto_tags": ["admin", "groupe_facebook", "communaute"],
+          "template_default": "affiliation_admin_groupe"
+        },
+        "youtubeur": {
+          "list_id": 4,
+          "list_name": "YouTubeurs Voyage",
+          "auto_tags": ["youtubeur", "video", "content_creator"],
+          "template_default": "affiliation_75pct"
+        },
+        "default": {
+          "list_id": 10,
+          "list_name": "Contacts Divers Ulixai",
+          "auto_tags": ["autre"],
+          "template_default": null
+        }
+      }
+    }
+  }
+}
