@@ -62,12 +62,16 @@ async def create_job_simple(
          "config": {"start_url": "https://example.com/blog", "max_articles": 100}
        }
     """
-    # Sécurité: localhost seulement
+    # Sécurité: localhost + réseau Docker
     client_host = request.client.host
-    if client_host not in ["127.0.0.1", "localhost", "::1"]:
+    # Accepter localhost ET réseau Docker interne (172.18.x.x)
+    is_localhost = client_host in ["127.0.0.1", "localhost", "::1"]
+    is_docker_network = client_host.startswith("172.18.") or client_host.startswith("172.17.")
+
+    if not (is_localhost or is_docker_network):
         raise HTTPException(
             status_code=403,
-            detail="Dev mode: accessible uniquement depuis localhost"
+            detail="Accessible depuis localhost ou réseau Docker uniquement"
         )
 
     # Valider source_type

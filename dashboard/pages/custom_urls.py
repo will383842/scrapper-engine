@@ -102,13 +102,11 @@ def render_custom_urls_page(i18n: I18nManager):
             st.error(i18n.t('validation.atLeastOneUrl'))
         else:
             try:
-                result = api_request("POST", "/api/v1/scraping/jobs", {
+                result = api_request("POST", "/api/v1/scraping/jobs/simple", {
                     "source_type": "custom_urls",
                     "name": job_name or f"Custom URLs - {len(urls)} URLs",
                     "config": {"urls": urls},
-                    "category": category,
-                    "platform": platform,
-                    "auto_inject_mailwizz": auto_inject,
+                    "max_results": len(urls) * 10  # Estimation: 10 contacts par URL
                 })
                 st.success(i18n.t('messages.jobCreated', job_id=result['job_id'], status=result['status']))
                 st.rerun()

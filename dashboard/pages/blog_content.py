@@ -81,14 +81,15 @@ def render_blog_content_page(i18n: I18nManager):
             st.error(i18n.t('validation.invalidUrl'))
         else:
             try:
-                result = api_request("POST", "/api/v1/scraping/jobs", {
+                result = api_request("POST", "/api/v1/scraping/jobs/simple", {
                     "source_type": "blog_content",
                     "name": job_name or f"Blog - {blog_url}",
                     "config": {
                         "start_url": blog_url,
                         "max_articles": max_articles,
                         "scrape_depth": scrape_depth
-                    }
+                    },
+                    "max_results": max_articles
                 })
                 st.success(i18n.t('messages.jobCreated', job_id=result['job_id'], status=result['status']))
                 st.rerun()
