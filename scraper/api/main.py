@@ -20,8 +20,24 @@ from scraper.logging_config import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Rate limiter configuration
-limiter = Limiter(key_func=get_remote_address)
+# Rate limiter configuration with Redis backend
+redis_client = redis.Redis(
+    host=os.getenv("REDIS_HOST", "localhost"),
+    port=int(os.getenv("REDIS_PORT", 6379)),
+    password=os.getenv("REDIS_PASSWORD"),
+    db=0,
+    decode_responses=True,
+    socket_connect_timeout=5,
+    socket_timeout=5,
+)
+
+try:
+    redis_client.ping()
+    logger.info("Redis connected successfully for rate limiting")
+    limiter = Limiter(key_func=get_remote_address, storage_uri=f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', 6379)}", storage_options={"password": os.getenv("REDIS_PASSWORD")})
+except Exception as e:
+    logger.warning(f"Redis unavailable for rate limiting, using in-memory: {e}")
+    limiter = Limiter(key_func=get_remote_address)  # Fallback to in-memory
 
 app = FastAPI(
     title="Scraper-Pro API",
