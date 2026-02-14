@@ -20,24 +20,9 @@ from scraper.logging_config import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Rate limiter configuration with Redis backend
-redis_client = redis.Redis(
-    host=os.getenv("REDIS_HOST", "localhost"),
-    port=int(os.getenv("REDIS_PORT", 6379)),
-    password=os.getenv("REDIS_PASSWORD"),
-    db=0,
-    decode_responses=True,
-    socket_connect_timeout=5,
-    socket_timeout=5,
-)
-
-try:
-    redis_client.ping()
-    logger.info("Redis connected successfully for rate limiting")
-    limiter = Limiter(key_func=get_remote_address, storage_uri=f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', 6379)}", storage_options={"password": os.getenv("REDIS_PASSWORD")})
-except Exception as e:
-    logger.warning(f"Redis unavailable for rate limiting, using in-memory: {e}")
-    limiter = Limiter(key_func=get_remote_address)  # Fallback to in-memory
+# TEMPORARILY DISABLED: Rate limiter causing timeouts
+# Will re-enable once properly configured
+# limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
     title="Scraper-Pro API",
@@ -45,9 +30,9 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Add rate limiter to app state
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Rate limiter temporarily disabled
+# app.state.limiter = limiter
+# app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 _cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:8501").split(",")
 app.add_middleware(
