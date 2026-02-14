@@ -61,12 +61,12 @@ def render_blog_content_page(i18n: I18nManager):
         with col1:
             max_articles = st.number_input(
                 i18n.t('blogContent.form.maxArticles'),
-                min_value=10, max_value=1000, value=100
+                min_value=10, max_value=100000, value=100
             )
         with col2:
             scrape_depth = st.number_input(
                 i18n.t('blogContent.form.scrapeDepth'),
-                min_value=1, max_value=5, value=2,
+                min_value=1, max_value=10, value=2,
                 help=i18n.t('blogContent.form.scrapeDepthHelp')
             )
 

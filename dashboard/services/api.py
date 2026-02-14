@@ -43,6 +43,6 @@ def api_request(method: str, path: str, json_data: dict | None = None) -> dict:
         "Content-Type": "application/json",
     }
 
-    resp = requests.request(method, url, headers=headers, json=json_data, timeout=30)
+    resp = requests.request(method, url, headers=headers, json=json_data, timeout=120)
     resp.raise_for_status()
     return resp.json()
