@@ -14,13 +14,7 @@ router = APIRouter()
 
 
 @router.post("/jobs/simple")
-async def create_job_simple(
-    request: Request,
-    source_type: str,
-    name: str,
-    config: dict,
-    max_results: int = 100,
-):
+async def create_job_simple(request: Request):
     """
     Endpoint simplifié SANS authentification HMAC.
 
@@ -72,6 +66,26 @@ async def create_job_simple(
         raise HTTPException(
             status_code=403,
             detail="Accessible depuis localhost ou réseau Docker uniquement"
+        )
+
+    # Parser le JSON body
+    try:
+        body = await request.json()
+        source_type = body.get("source_type")
+        name = body.get("name")
+        config = body.get("config")
+        max_results = body.get("max_results", 100)
+    except Exception as e:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid JSON body: {str(e)}"
+        )
+
+    # Valider les champs requis
+    if not source_type or not name or not config:
+        raise HTTPException(
+            status_code=422,
+            detail="Missing required fields: source_type, name, config"
         )
 
     # Valider source_type
