@@ -1,0 +1,421 @@
+{
+  "app": {
+    "title": "Scraper-Pro Admin",
+    "subtitle": "MODE 2 Scraping Dashboard - Simple"
+  },
+  "auth": {
+    "title": "Scraper-Pro Admin",
+    "password": "Password",
+    "login": "Login",
+    "invalidPassword": "Invalid password",
+    "notConfigured": "DASHBOARD_PASSWORD not configured"
+  },
+  "sidebar": {
+    "jobs": "Jobs",
+    "customUrls": "Custom URLs",
+    "blogContent": "Blog Content",
+    "contacts": "Contacts",
+    "stats": "Statistics",
+    "config": "Configuration",
+    "modeDescription": "Simplified scraping: Custom URLs + Blog Content only",
+    "footer": "Made with ❤️ for expats"
+  },
+  "pages": {
+    "jobs": {
+      "title": "Jobs Management"
+    },
+    "customUrls": {
+      "title": "Custom URLs"
+    },
+    "blogContent": {
+      "title": "Blog Content"
+    },
+    "contacts": {
+      "title": "Contacts Pipeline"
+    },
+    "stats": {
+      "title": "Statistics"
+    },
+    "config": {
+      "title": "System Configuration"
+    }
+  },
+  "jobs": {
+    "header": "Scraping Jobs",
+    "metrics": {
+      "total": "Total Jobs",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "table": {
+      "id": "ID",
+      "name": "Name",
+      "sourceType": "Type",
+      "status": "Status",
+      "progress": "Progress",
+      "pagesScraped": "Pages scraped",
+      "contactsExtracted": "Contacts extracted",
+      "errorsCount": "Errors",
+      "createdAt": "Created at",
+      "startedAt": "Started at",
+      "completedAt": "Completed at"
+    },
+    "actions": {
+      "title": "Job Actions",
+      "jobId": "Job ID",
+      "action": "Action",
+      "resume": "Resume (from checkpoint)",
+      "pause": "Pause (running only)",
+      "cancel": "Cancel (stop permanently)",
+      "execute": "Execute Action"
+    },
+    "newJob": {
+      "title": "Launch New Job",
+      "name": "Job name",
+      "namePlaceholder": "Dashboard Job",
+      "sourceType": "Source type",
+      "category": "Category",
+      "platform": "Platform",
+      "autoInject": "Auto-inject to MailWizz",
+      "launch": "Launch Job"
+    },
+    "sourceTypes": {
+      "googleSearch": "Google Search",
+      "googleMaps": "Google Maps",
+      "customUrls": "Custom URLs",
+      "blogContent": "Blog Content"
+    },
+    "noJobs": "No scraping jobs yet."
+  },
+  "customUrls": {
+    "header": "Custom URLs Scraping",
+    "description": "Scrape contacts from a list of URLs you provide. Ideal for targeting specific websites.",
+    "metrics": {
+      "totalJobs": "Total Jobs",
+      "urlsScraped": "URLs Scraped",
+      "contactsFound": "Contacts Found",
+      "successRate": "Success Rate"
+    },
+    "form": {
+      "title": "Create Custom URLs Job",
+      "jobName": "Job name",
+      "jobNamePlaceholder": "My Custom URLs Job",
+      "urls": "URLs to scrape (one per line)",
+      "urlsPlaceholder": "https://www.example1.com\nhttps://www.example2.fr\n...",
+      "urlsHelp": "Enter one URL per line. URLs must start with http:// or https://",
+      "category": "Category (auto-detect if empty)",
+      "platform": "Target platform",
+      "autoInject": "Auto-inject to MailWizz",
+      "autoInjectHelp": "Validated contacts will be automatically sent to the appropriate MailWizz list"
+    },
+    "recentJobs": "Recent Custom URLs Jobs",
+    "noJobs": "No Custom URLs jobs created yet."
+  },
+  "blogContent": {
+    "header": "Blog Content Scraping",
+    "description": "Automatically scrape articles from a blog. The system detects article URLs and extracts content.",
+    "metrics": {
+      "articlesScraped": "Articles Scraped",
+      "uniqueBlogs": "Unique Blogs",
+      "avgWords": "Avg Words",
+      "thisWeek": "This Week"
+    },
+    "form": {
+      "title": "Create Blog Content Job",
+      "jobName": "Job name",
+      "blogUrl": "Blog URL or homepage",
+      "maxArticles": "Max articles",
+      "scrapeDepth": "Scrape depth",
+      "scrapeDepthHelp": "Number of link levels to follow (1-5). Higher = more articles but longer."
+    }
+  },
+  "contacts": {
+    "header": "Contacts Pipeline",
+    "metrics": {
+      "scraped": "Scraped",
+      "validated": "Validated",
+      "sentToMailwizz": "Sent to MailWizz",
+      "bounced": "Bounced"
+    },
+    "byPlatform": "By Platform",
+    "pendingValidation": "Pending validation",
+    "search": {
+      "title": "Search Contacts",
+      "email": "Email contains",
+      "emailPlaceholder": "@example.com",
+      "name": "Name contains",
+      "namePlaceholder": "smith",
+      "category": "Category",
+      "status": "Status",
+      "button": "Search",
+      "found": "{count} contacts found (showing max 100)",
+      "noResults": "No contacts match these filters."
+    },
+    "detail": {
+      "title": "Contact Detail",
+      "selectContact": "Select contact",
+      "email": "Email",
+      "name": "Name",
+      "phone": "Phone",
+      "phoneValid": "(valid)",
+      "phoneNotValid": "(not validated)",
+      "website": "Website",
+      "address": "Address",
+      "country": "Country",
+      "category": "Category",
+      "platform": "Platform",
+      "status": "Status",
+      "mailwizzList": "MailWizz List",
+      "mailwizzUid": "MailWizz UID",
+      "tags": "Tags",
+      "socialMedia": "Social Media",
+      "lastError": "Last error"
+    },
+    "export": {
+      "title": "Export Contacts CSV",
+      "statusFilter": "Status filter",
+      "platformFilter": "Platform filter",
+      "categoryFilter": "Category filter",
+      "generate": "Generate CSV",
+      "download": "Download ({count} contacts)",
+      "noContacts": "No contacts match these filters."
+    },
+    "noValidated": "No validated contacts yet."
+  },
+  "articles": {
+    "header": "Scraped Articles",
+    "metrics": {
+      "total": "Total Articles",
+      "uniqueDomains": "Unique Domains",
+      "avgWords": "Avg Words",
+      "thisWeek": "This Week"
+    },
+    "filters": {
+      "domain": "Domain",
+      "language": "Language",
+      "sortBy": "Sort by",
+      "newestScraped": "Newest scraped",
+      "mostWords": "Most words",
+      "titleAZ": "Title A-Z",
+      "newestPublished": "Newest published"
+    },
+    "table": {
+      "id": "ID",
+      "title": "Title",
+      "domain": "Domain",
+      "language": "Language",
+      "wordCount": "Words",
+      "author": "Author",
+      "datePublished": "Published on",
+      "scrapedAt": "Scraped at",
+      "url": "URL"
+    },
+    "detail": {
+      "title": "Article Detail",
+      "selectArticle": "Select article",
+      "by": "By",
+      "words": "words",
+      "fullContent": "Full content",
+      "truncated": "... (truncated at 5000 chars)",
+      "externalLinks": "External links ({count})"
+    },
+    "export": {
+      "title": "Export Articles",
+      "csv": "Export CSV",
+      "json": "Export JSON",
+      "downloadCsv": "Download CSV ({count} articles)",
+      "downloadJson": "Download JSON ({count} articles)",
+      "noArticles": "No articles to export."
+    },
+    "noArticles": "No articles scraped yet."
+  },
+  "stats": {
+    "header": "Pipeline Statistics",
+    "dailyScraping": "Daily Scraping Volume (last 30 days)",
+    "dailyMailwizz": "Daily MailWizz Sync (last 30 days)",
+    "domainBlacklist": "Domain Blacklist (top bouncing)",
+    "whoisIntelligence": "WHOIS Intelligence",
+    "whoisMetrics": {
+      "totalLookups": "Total Lookups",
+      "privateWhois": "Private WHOIS",
+      "cloudflare": "Cloudflare",
+      "registrars": "Registrars"
+    },
+    "topRegistrars": "Top Registrars",
+    "noBlacklist": "No blacklisted domains yet."
+  },
+  "proxies": {
+    "header": "Proxy Health Monitor",
+    "metrics": {
+      "active": "Active Proxies",
+      "blacklisted": "Blacklisted",
+      "cooldown": "In Cooldown",
+      "avgSuccess": "Avg Success Rate"
+    },
+    "list": {
+      "title": "Proxy List",
+      "statusFilter": "Status",
+      "providerFilter": "Provider"
+    },
+    "table": {
+      "proxyUrl": "Proxy URL",
+      "successRate": "Success Rate",
+      "avgResponse": "Avg Response (ms)",
+      "consecutiveFailures": "Consecutive Failures"
+    },
+    "actions": {
+      "title": "Proxy Actions",
+      "resetCooldowns": "🔄 Reset All Cooldowns",
+      "clearBlacklist": "🗑️ Clear Blacklist",
+      "resetSuccess": "✅ Reset {count} proxies",
+      "unblacklistSuccess": "✅ Unblacklisted {count} proxies"
+    },
+    "performance": {
+      "title": "Proxy Performance Chart",
+      "successByProvider": "Average Success Rate by Provider",
+      "requestsByProvider": "Total Requests by Provider"
+    },
+    "blacklistEvents": {
+      "title": "Recent Blacklist Events",
+      "noEvents": "No blacklist events detected yet. ✅"
+    },
+    "noProxies": "No proxy stats yet. Proxies will appear here after first use.",
+    "howToAdd": "**How to add proxies:**\n1. Configure proxies in `config/proxy_config.json`\n2. Set credentials in `.env` (`PROXY_USER`, `PROXY_PASS`)\n3. Launch a scraping job\n4. Proxies will be automatically tracked here"
+  },
+  "whois": {
+    "header": "WHOIS Domain Lookup",
+    "domain": "Domain",
+    "domainPlaceholder": "example.com",
+    "lookup": "Lookup",
+    "invalidDomain": "Enter a valid domain (e.g. example.com)",
+    "lookupFailed": "WHOIS lookup failed for {domain}",
+    "badges": {
+      "private": "Private WHOIS",
+      "cloudflare": "Cloudflare",
+      "public": "Public WHOIS"
+    },
+    "fields": {
+      "registrar": "Registrar",
+      "creationDate": "Creation Date",
+      "expirationDate": "Expiration Date",
+      "registrant": "Registrant",
+      "email": "Email",
+      "country": "Country",
+      "nameServers": "Name Servers"
+    },
+    "recentLookups": "Recent Lookups",
+    "noLookups": "No WHOIS lookups yet."
+  },
+  "config": {
+    "header": "System Configuration",
+    "systemHealth": {
+      "title": "System Health",
+      "api": "API",
+      "postgres": "PostgreSQL",
+      "redis": "Redis",
+      "ok": "OK",
+      "degraded": "Degraded",
+      "down": "DOWN",
+      "unreachable": "Cannot reach scraper API"
+    },
+    "activeConfig": {
+      "title": "Active Configuration",
+      "proxyProvider": "Proxy Provider",
+      "mailwizzRouting": "MailWizz Routing",
+      "noPlatforms": "No platforms configured yet.",
+      "notSet": "not set"
+    },
+    "environment": {
+      "title": "Environment",
+      "configured": "configured",
+      "notSet": "NOT SET"
+    }
+  },
+  "categories": {
+    "autoDetect": "Auto-detect",
+    "avocat": "Lawyer",
+    "assureur": "Insurer",
+    "notaire": "Notary",
+    "medecin": "Doctor",
+    "comptable": "Accountant",
+    "traducteur": "Translator",
+    "agent_immo": "Real Estate Agent",
+    "demenageur": "Mover",
+    "banquier": "Banker",
+    "consultant": "Consultant",
+    "blogueur": "Blogger",
+    "influenceur": "Influencer",
+    "youtubeur": "YouTuber",
+    "admin_groupe": "Group Admin"
+  },
+  "platforms": {
+    "autoDetect": "Auto-detect",
+    "sosExpat": "sos-expat",
+    "ulixai": "ulixai"
+  },
+  "status": {
+    "all": "All",
+    "pending": "Pending",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "paused": "Paused",
+    "cancelled": "Cancelled",
+    "validated": "Validated",
+    "readyForMailwizz": "Ready for MailWizz",
+    "sentToMailwizz": "Sent to MailWizz",
+    "bounced": "Bounced",
+    "active": "Active",
+    "cooldown": "Cooldown",
+    "blacklisted": "Blacklisted"
+  },
+  "buttons": {
+    "login": "Login",
+    "launch": "Launch",
+    "search": "Search",
+    "export": "Export",
+    "generate": "Generate",
+    "download": "Download",
+    "lookup": "Lookup",
+    "execute": "Execute",
+    "reset": "Reset",
+    "clear": "Clear"
+  },
+  "messages": {
+    "success": "Success!",
+    "error": "Error: {error}",
+    "apiError": "API error: {error}",
+    "dbError": "Database error: {error}",
+    "searchError": "Search error: {error}",
+    "exportError": "Export error: {error}",
+    "jobCreated": "Job created! ID: {job_id} - Status: {status}",
+    "jobActionSuccess": "Job #{job_id}: {status}",
+    "loading": "Loading...",
+    "noData": "No data available"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email",
+    "invalidUrl": "Invalid URL",
+    "invalidDomain": "Invalid domain",
+    "queryRequired": "Search query is required.",
+    "atLeastOneUrl": "At least one URL is required.",
+    "blogUrlRequired": "Blog URL is required."
+  },
+  "common": {
+    "all": "All",
+    "none": "None",
+    "na": "N/A",
+    "yes": "Yes",
+    "no": "No",
+    "unknown": "Unknown",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information"
+  }
+}

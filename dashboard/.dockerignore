@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation (pas nécessaire dans l'image)
+*.md
+README*
+CHANGELOG*
+MIGRATION*
+IMPLEMENTATION*
+QUICK_START*
+STRUCTURE.txt
+
+# Fichiers legacy (pas nécessaires)
+app_legacy.py
+app_old_backup.py
+app_final.py
+app_premium.py
+demo_article_filters.py
+test_*.py
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit cache
+.streamlit/
