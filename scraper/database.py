@@ -1,6 +1,7 @@
 """Database connection manager for PostgreSQL."""
 
 import os
+import threading
 from contextlib import contextmanager
 from urllib.parse import quote_plus
 
@@ -9,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 _engine = None
 _SessionFactory = None
+_lock = threading.Lock()
 
 
 def get_database_url() -> str:
@@ -26,19 +28,23 @@ def get_database_url() -> str:
 def get_engine():
     global _engine
     if _engine is None:
-        _engine = create_engine(
-            get_database_url(),
-            pool_size=10,
-            max_overflow=20,
-            pool_pre_ping=True,
-        )
+        with _lock:
+            if _engine is None:
+                _engine = create_engine(
+                    get_database_url(),
+                    pool_size=10,
+                    max_overflow=20,
+                    pool_pre_ping=True,
+                )
     return _engine
 
 
 def get_session_factory():
     global _SessionFactory
     if _SessionFactory is None:
-        _SessionFactory = sessionmaker(bind=get_engine())
+        with _lock:
+            if _SessionFactory is None:
+                _SessionFactory = sessionmaker(bind=get_engine())
     return _SessionFactory
 
 

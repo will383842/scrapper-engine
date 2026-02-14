@@ -1,9 +1,86 @@
+# ========================================
+# SECRETS & CREDENTIALS (CRITIQUE)
+# ========================================
 .env
+.env.local
+.env.production
+.env.optimized
+*.env
+!.env.example
+secrets/
+*-secrets-*.txt
+.scraper-secrets-*
+credentials.json
+service-account.json
+
+# ========================================
+# PYTHON
+# ========================================
 __pycache__/
 *.pyc
+*.py[cod]
+*$py.class
 .pytest_cache/
 *.egg-info/
 dist/
 build/
+venv/
+ENV/
+env/
+.venv
+.coverage
+htmlcov/
+
+# ========================================
+# LOGS & DATA
+# ========================================
 logs/
+*.log
+*.out
+*.err
+data/
+output/
+exports/
+downloads/
+backups/
+*.sql.gz
+*.dump
+
+# ========================================
+# SCRAPY
+# ========================================
 .scrapy/
+*.jl
+*.jsonl
+*.csv
+
+# ========================================
+# MONITORING DATA
+# ========================================
+monitoring/prometheus/data/
+monitoring/grafana/data/
+prometheus_data/
+grafana_data/
+loki_data/
+
+# ========================================
+# OS & IDE
+# ========================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# ========================================
+# NODE
+# ========================================
+node_modules/
+package-lock.json
+
+# ========================================
+# ARCHIVES
+# ========================================
+*.zip
+*.tar
+*.tar.gz

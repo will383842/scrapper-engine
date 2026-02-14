@@ -1,0 +1,169 @@
+# Alerting rules for Scraper-Pro
+
+groups:
+  - name: scraper_alerts
+    interval: 30s
+    rules:
+      # Service Down Alerts
+      - alert: ScraperAPIDown
+        expr: up{job="scraper-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Scraper API is down"
+          description: "Scraper API has been down for more than 2 minutes"
+
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL has been down for more than 2 minutes"
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: cache
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been down for more than 1 minute"
+
+      # Job Alerts
+      - alert: HighJobFailureRate
+        expr: |
+          sum(rate(scraper_jobs_failed_total[5m]))
+          /
+          sum(rate(scraper_jobs_total[5m]))
+          > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: jobs
+        annotations:
+          summary: "High job failure rate"
+          description: "More than 50% of jobs are failing (last 5 minutes)"
+
+      - alert: JobStuckRunning
+        expr: |
+          scraper_jobs_running{status="running"} > 0
+          AND
+          changes(scraper_jobs_running[30m]) == 0
+        for: 30m
+        labels:
+          severity: warning
+          component: jobs
+        annotations:
+          summary: "Job stuck in running state"
+          description: "Job {{ $labels.job_id }} has been running for more than 30 minutes without progress"
+
+      # MailWizz Sync Alerts
+      - alert: MailWizzSyncFailureRate
+        expr: |
+          sum(rate(scraper_mailwizz_sync_failed_total[10m]))
+          /
+          sum(rate(scraper_mailwizz_sync_total[10m]))
+          > 0.1
+        for: 15m
+        labels:
+          severity: warning
+          component: mailwizz
+        annotations:
+          summary: "MailWizz sync failure rate > 10%"
+          description: "MailWizz sync is failing for {{ $value | humanizePercentage }} of contacts"
+
+      - alert: MailWizzBounceRateHigh
+        expr: |
+          sum(rate(scraper_contacts_bounced_total[1h]))
+          /
+          sum(rate(scraper_contacts_sent_total[1h]))
+          > 0.05
+        for: 1h
+        labels:
+          severity: warning
+          component: mailwizz
+        annotations:
+          summary: "Email bounce rate > 5%"
+          description: "Bounce rate is {{ $value | humanizePercentage }}, check email quality"
+
+      # Proxy Alerts
+      - alert: ProxyFailureRate
+        expr: |
+          sum(rate(scraper_proxy_failures_total[5m])) by (proxy_provider)
+          /
+          sum(rate(scraper_proxy_requests_total[5m])) by (proxy_provider)
+          > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: proxy
+        annotations:
+          summary: "Proxy {{ $labels.proxy_provider }} failure rate > 50%"
+          description: "Proxy {{ $labels.proxy_provider }} is failing {{ $value | humanizePercentage }} of requests"
+
+      # Resource Alerts
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          component: resources
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 90% ({{ $value | humanize }}%)"
+
+      - alert: HighDiskUsage
+        expr: |
+          (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: resources
+        annotations:
+          summary: "High disk usage"
+          description: "Disk usage is above 85% ({{ $value | humanize }}%)"
+
+      # Database Alerts
+      - alert: PostgreSQLConnectionsHigh
+        expr: |
+          pg_stat_database_numbackends / pg_settings_max_connections * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL connections > 80%"
+          description: "PostgreSQL is using {{ $value | humanize }}% of max connections"
+
+      - alert: PostgreSQLSlowQueries
+        expr: |
+          rate(pg_stat_statements_mean_time_seconds[5m]) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL slow queries detected"
+          description: "Average query time is {{ $value | humanize }}s"
+
+      # Validation Alerts
+      - alert: LowEmailValidationRate
+        expr: |
+          sum(rate(scraper_contacts_validated_total[1h]))
+          /
+          sum(rate(scraper_contacts_scraped_total[1h]))
+          < 0.3
+        for: 1h
+        labels:
+          severity: info
+          component: validation
+        annotations:
+          summary: "Email validation rate < 30%"
+          description: "Only {{ $value | humanizePercentage }} of scraped contacts are valid"

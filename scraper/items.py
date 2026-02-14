@@ -40,3 +40,20 @@ class ArticleItem(scrapy.Item):
     source_url = scrapy.Field()
     domain = scrapy.Field()
     job_id = scrapy.Field()
+
+    # Universal metadata fields (extracted automatically)
+    # Métadonnées géographiques
+    country = scrapy.Field()  # "france", "spain", "usa"
+    region = scrapy.Field()  # "europe", "asia", "africa"
+    city = scrapy.Field()  # "paris", "bangkok"
+
+    # Métadonnées de classification
+    extracted_category = scrapy.Field()  # Catégorie extraite automatiquement
+    extracted_subcategory = scrapy.Field()  # Sous-catégorie
+
+    # Métadonnées temporelles additionnelles
+    year = scrapy.Field()  # 2024
+    month = scrapy.Field()  # 1-12
+
+    # Legacy expat.com specific field (deprecated - use extracted_category)
+    category_expat = scrapy.Field()

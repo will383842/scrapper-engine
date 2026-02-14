@@ -1,0 +1,53 @@
+# ═══════════════════════════════════════════════════════════
+# Scraper-Pro Dashboard Dependencies
+# ═══════════════════════════════════════════════════════════
+#
+# Installation:
+#   pip install -r dashboard/requirements.txt
+#
+# Compatible with:
+#   - Python 3.11+
+#   - app.py
+#   - app_premium.py
+#   - app_final.py (RECOMMENDED)
+#
+# ═══════════════════════════════════════════════════════════
+
+# ─── Core Dashboard Framework ───
+streamlit>=1.30.0,<2.0.0
+
+# ─── Database ───
+SQLAlchemy>=2.0.0,<3.0.0
+psycopg2-binary>=2.9.9
+
+# ─── HTTP Client ───
+requests>=2.31.0,<3.0.0
+
+# ─── Environment Variables ───
+python-dotenv>=1.0.0
+
+# ─── Data Processing (Optional but Recommended) ───
+pandas>=2.1.0,<3.0.0
+
+# ─── Version Checking (for test_dashboard.py) ───
+packaging>=23.0
+
+# ─── Charts & Visualization ───
+plotly>=5.18.0  # Interactive charts for article_filters component
+# altair>=5.2.0   # Uncomment for declarative charts
+
+# ═══════════════════════════════════════════════════════════
+# Production Recommendations
+# ═══════════════════════════════════════════════════════════
+#
+# For production deployments, pin exact versions:
+#
+# streamlit==1.30.0
+# SQLAlchemy==2.0.25
+# psycopg2-binary==2.9.9
+# requests==2.31.0
+# python-dotenv==1.0.1
+# pandas==2.1.4
+# packaging==23.2
+#
+# ═══════════════════════════════════════════════════════════

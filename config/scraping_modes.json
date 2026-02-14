@@ -1,0 +1,198 @@
+{
+  "modes": {
+    "urls_only": {
+      "name": "URLs Only Mode",
+      "description": "Scrape custom URLs only (NO proxies, NO Google) - Optimized for CPX31",
+      "enabled_spiders": [
+        "generic_urls",
+        "blog_content"
+      ],
+      "disabled_spiders": [
+        "google_search",
+        "google_maps"
+      ],
+      "features": {
+        "proxy_required": false,
+        "google_search": false,
+        "google_maps": false,
+        "serpapi_fallback": false,
+        "deduplication": "ultra",
+        "monitoring": "standard",
+        "rate_limiting": "polite",
+        "concurrent_requests": 16,
+        "concurrent_requests_per_domain": 4,
+        "download_delay": 1.0
+      },
+      "requirements": {
+        "proxy_provider": false,
+        "serpapi_key": false,
+        "min_ram_gb": 4,
+        "min_cpu_cores": 2
+      },
+      "recommended_for": [
+        "Initial deployment",
+        "Low-budget setups ($20-50/month)",
+        "Direct URL scraping",
+        "Blog content extraction",
+        "CPX31 server (4 vCPU, 8GB RAM)"
+      ],
+      "performance": {
+        "urls_per_minute": "50-100",
+        "urls_per_hour": "3000-6000",
+        "urls_per_day": "70000-150000",
+        "cost_estimate": "$0/month (no proxies)"
+      }
+    },
+    "full": {
+      "name": "Full Mode (All Sources)",
+      "description": "All scraping sources enabled (Google Search, Google Maps, custom URLs)",
+      "enabled_spiders": [
+        "generic_urls",
+        "blog_content",
+        "google_search",
+        "google_maps"
+      ],
+      "disabled_spiders": [],
+      "features": {
+        "proxy_required": true,
+        "google_search": true,
+        "google_maps": true,
+        "serpapi_fallback": true,
+        "deduplication": "ultra",
+        "monitoring": "complete",
+        "rate_limiting": "moderate",
+        "concurrent_requests": 8,
+        "concurrent_requests_per_domain": 2,
+        "download_delay": 2.0
+      },
+      "requirements": {
+        "proxy_provider": true,
+        "serpapi_key": true,
+        "min_ram_gb": 8,
+        "min_cpu_cores": 4
+      },
+      "recommended_for": [
+        "Production environments",
+        "Large-scale scraping",
+        "Google Search scraping",
+        "Google Maps scraping",
+        "Multi-source campaigns"
+      ],
+      "performance": {
+        "urls_per_minute": "20-50",
+        "urls_per_hour": "1200-3000",
+        "urls_per_day": "30000-70000",
+        "cost_estimate": "$500-2000/month (proxies + SerpAPI)"
+      }
+    }
+  },
+  "source_types": {
+    "custom_urls": {
+      "name": "Custom URLs",
+      "description": "Scrape a list of custom URLs",
+      "requires_proxy": false,
+      "available_in": ["urls_only", "full"],
+      "max_concurrent": 16,
+      "config_schema": {
+        "urls": {
+          "type": "array",
+          "required": true,
+          "description": "List of URLs to scrape"
+        }
+      }
+    },
+    "blog_content": {
+      "name": "Blog Content",
+      "description": "Scrape blog articles from a website",
+      "requires_proxy": false,
+      "available_in": ["urls_only", "full"],
+      "max_concurrent": 8,
+      "config_schema": {
+        "start_url": {
+          "type": "string",
+          "required": true,
+          "description": "Blog homepage URL"
+        },
+        "max_articles": {
+          "type": "integer",
+          "default": 100,
+          "description": "Maximum articles to scrape"
+        },
+        "scrape_depth": {
+          "type": "integer",
+          "default": 2,
+          "description": "Maximum crawl depth"
+        }
+      }
+    },
+    "google_search": {
+      "name": "Google Search",
+      "description": "Scrape Google Search results",
+      "requires_proxy": true,
+      "available_in": ["full"],
+      "max_concurrent": 2,
+      "config_schema": {
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "Search query"
+        },
+        "max_results": {
+          "type": "integer",
+          "default": 100,
+          "description": "Maximum results to scrape"
+        },
+        "country": {
+          "type": "string",
+          "default": "fr",
+          "description": "Country code (fr, us, uk, etc.)"
+        },
+        "language": {
+          "type": "string",
+          "default": "fr",
+          "description": "Language code (fr, en, es, etc.)"
+        }
+      }
+    },
+    "google_maps": {
+      "name": "Google Maps",
+      "description": "Scrape Google Maps business listings",
+      "requires_proxy": true,
+      "available_in": ["full"],
+      "max_concurrent": 2,
+      "config_schema": {
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "Search query"
+        },
+        "location": {
+          "type": "string",
+          "required": true,
+          "description": "Location (city, country)"
+        },
+        "max_results": {
+          "type": "integer",
+          "default": 50,
+          "description": "Maximum results to scrape"
+        }
+      }
+    }
+  },
+  "migration_guide": {
+    "from_urls_only_to_full": {
+      "steps": [
+        "1. Configure proxy provider (PROXY_PROVIDER, PROXY_USER, PROXY_PASS)",
+        "2. Add SerpAPI key (SERPAPI_KEY)",
+        "3. Update SCRAPING_MODE=full in .env",
+        "4. Restart Docker containers",
+        "5. Test with a small Google Search job",
+        "6. Monitor proxy health in Dashboard"
+      ],
+      "estimated_cost": {
+        "proxy_provider": "$500-2000/month (depending on volume)",
+        "serpapi": "$50-200/month (fallback only)"
+      }
+    }
+  }
+}

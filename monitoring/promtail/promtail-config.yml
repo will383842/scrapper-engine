@@ -1,0 +1,51 @@
+# Promtail Configuration for Scraper-Pro
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Scraper application logs
+  - job_name: scraper-logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: scraper
+          __path__: /var/log/scraper/*.log
+
+  # Process contacts job logs
+  - job_name: process-contacts
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: process-contacts
+          __path__: /var/log/scraper/process.log
+
+  # MailWizz sync job logs
+  - job_name: mailwizz-sync
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: mailwizz-sync
+          __path__: /var/log/scraper/mailwizz_sync.log
+
+  # Docker container logs (via Docker API)
+  - job_name: docker-containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'stream'

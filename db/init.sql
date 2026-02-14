@@ -57,6 +57,8 @@ CREATE INDEX idx_scraped_status ON scraped_contacts(status);
 CREATE INDEX idx_scraped_email ON scraped_contacts(email);
 CREATE INDEX idx_scraped_job_id ON scraped_contacts(job_id);
 CREATE INDEX idx_scraped_at ON scraped_contacts(scraped_at DESC);
+-- Compound index for process_contacts batch fetch (status + order by scraped_at)
+CREATE INDEX idx_scraped_status_scraped_at ON scraped_contacts(status, scraped_at ASC);
 
 -- Contacts valides et categorises
 CREATE TABLE validated_contacts (
@@ -92,6 +94,8 @@ CREATE INDEX idx_validated_status ON validated_contacts(status);
 CREATE INDEX idx_validated_platform ON validated_contacts(platform);
 CREATE INDEX idx_validated_category ON validated_contacts(category);
 CREATE INDEX idx_validated_mailwizz_list ON validated_contacts(mailwizz_list_id);
+-- Compound index for sync_to_mailwizz batch fetch (status + retry_count + order by created_at)
+CREATE INDEX idx_validated_status_retry_created ON validated_contacts(status, retry_count, created_at ASC);
 
 -- Log de synchronisation MailWizz
 CREATE TABLE mailwizz_sync_log (
@@ -106,6 +110,8 @@ CREATE TABLE mailwizz_sync_log (
 
 CREATE INDEX idx_sync_contact ON mailwizz_sync_log(contact_id);
 CREATE INDEX idx_sync_status ON mailwizz_sync_log(status);
+-- Compound index for sync log analytics queries
+CREATE INDEX idx_sync_contact_status ON mailwizz_sync_log(contact_id, status, synced_at DESC);
 
 -- Stats proxies
 CREATE TABLE proxy_stats (
@@ -155,6 +161,9 @@ CREATE TABLE email_domain_blacklist (
     bounce_rate DECIMAL(5,2) DEFAULT 0.00,
     blacklisted_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Index for process_contacts domain blacklist check (bounce_rate + bounce_count filter)
+CREATE INDEX idx_blacklist_domain_bounce ON email_domain_blacklist(domain, bounce_rate, bounce_count);
 
 -- Logs erreurs
 CREATE TABLE error_logs (

@@ -11,9 +11,87 @@ from scrapy.exceptions import DropItem
 from scraper.database import get_db_session
 from scraper.items import ArticleItem
 from scraper.utils.checkpoint import is_url_seen, mark_url_seen
+from scraper.utils.deduplication_pro import DeduplicationManager
 from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
+
+
+class UltraProDeduplicationPipeline:
+    """
+    ULTRA-PROFESSIONAL multi-layer deduplication pipeline.
+
+    Layers:
+    1. URL exact match
+    2. URL normalized (http/https, www, trailing slash)
+    3. Email deduplication
+    4. Content hash (similar pages)
+    5. Temporal (don't re-scrape if recent)
+
+    This pipeline REPLACES the old DeduplicationPipeline.
+    """
+
+    def __init__(self):
+        self.manager: DeduplicationManager = None
+
+    def open_spider(self, spider):
+        """Initialize deduplication manager for this spider."""
+        job_id = getattr(spider, "job_id", None)
+        self.manager = DeduplicationManager(job_id=job_id)
+        logger.info(f"UltraProDeduplicationPipeline initialized for job #{job_id or 'default'}")
+
+    def process_item(self, item, spider):
+        """Process item through all deduplication layers."""
+        # Skip articles (handled separately)
+        if isinstance(item, ArticleItem):
+            return item
+
+        source_url = item.get("source_url", "")
+        email = item.get("email", "").lower().strip()
+
+        # Layer 1: URL exact match
+        if source_url and self.manager.is_url_seen_exact(source_url):
+            raise DropItem(f"URL already scraped (exact): {source_url}")
+
+        # Layer 2: URL normalized
+        if source_url and self.manager.is_url_seen_normalized(source_url):
+            raise DropItem(f"URL already scraped (normalized): {source_url}")
+
+        # Layer 3: Email deduplication
+        if not email:
+            raise DropItem("No email found")
+
+        if self.manager.is_email_seen(email):
+            raise DropItem(f"Email already scraped: {email}")
+
+        # Layer 4: Content hash (if content available)
+        content = item.get("content_text", "")
+        if content:
+            is_seen, content_hash = self.manager.is_content_seen(content)
+            if is_seen:
+                raise DropItem(f"Content already scraped (hash: {content_hash[:16]}...)")
+            item["content_hash"] = content_hash
+
+        # Layer 5: Temporal deduplication
+        if source_url and self.manager.is_url_recently_scraped(source_url):
+            raise DropItem(f"URL scraped recently: {source_url}")
+
+        # Mark all as seen
+        if source_url:
+            self.manager.mark_url_seen_exact(source_url)
+            self.manager.mark_url_seen_normalized(source_url)
+
+        self.manager.mark_email_seen(email)
+
+        if content and item.get("content_hash"):
+            self.manager.mark_content_seen(item["content_hash"])
+
+        return item
+
+    def close_spider(self, spider):
+        """Log deduplication statistics on spider close."""
+        if self.manager:
+            self.manager.log_stats()
 
 
 class DeduplicationPipeline:
@@ -49,9 +127,10 @@ class DeduplicationPipeline:
         if self.redis_client:
             try:
                 cache_key = f"scraper:seen_emails:{spider.job_id or 'default'}"
-                if self.redis_client.sismember(cache_key, email):
+                # Atomic check-and-add: sadd returns 0 if already exists, 1 if added
+                added = self.redis_client.sadd(cache_key, email)
+                if not added:
                     raise DropItem(f"Duplicate email: {email}")
-                self.redis_client.sadd(cache_key, email)
                 self.redis_client.expire(cache_key, 86400)
             except redis.ConnectionError:
                 logger.warning("Redis connection lost, falling back to in-memory dedup")
@@ -195,12 +274,16 @@ class ArticlePipeline:
                     (job_id, url, title, content_text, content_html, excerpt,
                      author, date_published, categories, tags,
                      external_links, internal_links, featured_image_url,
-                     meta_description, word_count, language, domain)
+                     meta_description, word_count, language, domain,
+                     country, region, city, extracted_category, extracted_subcategory,
+                     year, month)
                 VALUES
                     (:job_id, :url, :title, :content_text, :content_html, :excerpt,
                      :author, :date_published, :categories, :tags,
                      :external_links, :internal_links, :featured_image_url,
-                     :meta_description, :word_count, :language, :domain)
+                     :meta_description, :word_count, :language, :domain,
+                     :country, :region, :city, :extracted_category, :extracted_subcategory,
+                     :year, :month)
                 ON CONFLICT (url) DO UPDATE SET
                     title = EXCLUDED.title,
                     content_text = EXCLUDED.content_text,
@@ -216,6 +299,13 @@ class ArticlePipeline:
                     meta_description = EXCLUDED.meta_description,
                     word_count = EXCLUDED.word_count,
                     language = EXCLUDED.language,
+                    country = EXCLUDED.country,
+                    region = EXCLUDED.region,
+                    city = EXCLUDED.city,
+                    extracted_category = EXCLUDED.extracted_category,
+                    extracted_subcategory = EXCLUDED.extracted_subcategory,
+                    year = EXCLUDED.year,
+                    month = EXCLUDED.month,
                     scraped_at = NOW()
                 """),
                 {
@@ -236,6 +326,13 @@ class ArticlePipeline:
                     "word_count": item.get("word_count", 0),
                     "language": item.get("language"),
                     "domain": item.get("domain"),
+                    "country": item.get("country"),
+                    "region": item.get("region"),
+                    "city": item.get("city"),
+                    "extracted_category": item.get("extracted_category"),
+                    "extracted_subcategory": item.get("extracted_subcategory"),
+                    "year": item.get("year"),
+                    "month": item.get("month"),
                 },
             )
 

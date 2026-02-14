@@ -45,6 +45,15 @@ AUTOTHROTTLE_START_DELAY = 2
 AUTOTHROTTLE_MAX_DELAY = 30
 AUTOTHROTTLE_TARGET_CONCURRENCY = 2.0
 
+# Smart Throttle Extension (intelligent auto-adjustment)
+SMART_THROTTLE_MIN_DELAY = float(os.getenv("SMART_THROTTLE_MIN_DELAY", "1.0"))
+SMART_THROTTLE_MAX_DELAY = float(os.getenv("SMART_THROTTLE_MAX_DELAY", "60.0"))
+
+# Extensions
+EXTENSIONS = {
+    'scraper.utils.smart_throttle.SmartThrottleExtension': 500,
+}
+
 # Retry
 RETRY_ENABLED = True
 RETRY_TIMES = 3

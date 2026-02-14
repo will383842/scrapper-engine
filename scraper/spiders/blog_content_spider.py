@@ -18,6 +18,7 @@ from scraper.utils.checkpoint import (
     save_checkpoint,
     update_progress,
 )
+from scraper.utils.metadata_extractor import MetadataExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,9 @@ class BlogContentSpider(scrapy.Spider):
         self.articles_found = 0
         self.pages_crawled = 0
         self._seen_urls = set()
+
+        # Initialize metadata extractor
+        self.metadata_extractor = MetadataExtractor()
 
         # Accept single URL or list
         if start_url:
@@ -238,6 +242,9 @@ class BlogContentSpider(scrapy.Spider):
         # Extract links
         external_links, internal_links = self._extract_links(response, domain)
 
+        # Extract universal metadata
+        metadata = self.metadata_extractor.extract_all(response.url, response)
+
         self.articles_found += 1
 
         item = ArticleItem(
@@ -258,6 +265,14 @@ class BlogContentSpider(scrapy.Spider):
             source_url=response.url,
             domain=domain,
             job_id=self.job_id,
+            # Universal metadata
+            country=metadata.get("country"),
+            region=metadata.get("region"),
+            city=metadata.get("city"),
+            extracted_category=metadata.get("category"),
+            extracted_subcategory=metadata.get("subcategory"),
+            year=metadata.get("year"),
+            month=metadata.get("month"),
         )
 
         # Checkpoint after each article

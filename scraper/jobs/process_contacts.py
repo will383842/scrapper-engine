@@ -37,13 +37,15 @@ def process_pending_contacts():
     stats = {"processed": 0, "validated": 0, "rejected": 0, "duplicates": 0}
 
     with get_db_session() as session:
-        # Fetch pending contacts
+        # Fetch and lock pending contacts (SKIP LOCKED prevents
+        # concurrent jobs from processing the same rows)
         result = session.execute(
             text("""
             SELECT * FROM scraped_contacts
             WHERE status = 'pending_validation'
             ORDER BY scraped_at ASC
             LIMIT :limit
+            FOR UPDATE SKIP LOCKED
             """),
             {"limit": BATCH_SIZE},
         )

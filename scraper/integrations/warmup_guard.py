@@ -4,6 +4,14 @@ Warmup guard - checks email-engine quotas before MailWizz injection.
 Prevents blowing warmup phases by injecting too many contacts at once.
 Queries email-engine's /api/v1/warmup/plans to get current daily quotas,
 then limits the number of contacts synced per batch accordingly.
+
+email-engine WarmupPlanResponse fields:
+  - phase: str (e.g. "week_1", "week_2", ...)
+  - current_daily_quota: int
+  - paused: bool
+  - bounce_rate_7d: float
+  - spam_rate_7d: float
+  (no sent_today field — we track usage locally)
 """
 
 import logging
@@ -24,7 +32,8 @@ def get_daily_quota_remaining() -> int | None:
 
     Returns:
         Number of emails we can still inject today, or None if warmup check
-        is disabled or unreachable (in which case, proceed without limit).
+        is disabled (WARMUP_CHECK_ENABLED=false).
+        Returns 0 if email-engine is unreachable (fail-safe: pause sending).
     """
     enabled = os.getenv("WARMUP_CHECK_ENABLED", "false").lower() == "true"
     if not enabled:
@@ -45,45 +54,53 @@ def get_daily_quota_remaining() -> int | None:
         )
 
         if response.status_code != 200:
-            logger.warning(f"Email-engine returned {response.status_code}, skipping warmup check")
-            return None
+            logger.warning(
+                f"Email-engine returned {response.status_code}, "
+                "pausing sends (fail-safe)"
+            )
+            return 0
 
         plans = response.json()
         if not plans:
+            # No warmup plans = no restriction
             return None
 
         # Sum up daily quotas across all active warmup plans
         total_daily_quota = 0
-        total_sent_today = 0
 
         for plan in plans if isinstance(plans, list) else [plans]:
-            status = plan.get("status", "")
-            if status not in ("active", "warming"):
+            # email-engine uses "phase" (e.g. "week_1"), not "status"
+            phase = plan.get("phase", "")
+            paused = plan.get("paused", False)
+
+            # Skip paused plans
+            if paused:
                 continue
 
-            daily_quota = plan.get("daily_quota", 0) or plan.get("current_quota", 0)
-            sent_today = plan.get("sent_today", 0)
+            # Any plan with a phase is active (phases: week_1..week_6, done)
+            if not phase or phase == "done":
+                continue
+
+            # email-engine uses "current_daily_quota"
+            daily_quota = plan.get("current_daily_quota", 0)
             total_daily_quota += daily_quota
-            total_sent_today += sent_today
 
         if total_daily_quota == 0:
-            # No active warmup = no limit
+            # No active warmup plans (all paused or done) = no limit
             return None
 
         usable_quota = int(total_daily_quota * QUOTA_USAGE_RATIO)
-        remaining = max(0, usable_quota - total_sent_today)
 
         logger.info(
             f"Warmup guard: quota={total_daily_quota}, "
-            f"usable={usable_quota} ({QUOTA_USAGE_RATIO:.0%}), "
-            f"sent_today={total_sent_today}, remaining={remaining}"
+            f"usable={usable_quota} ({QUOTA_USAGE_RATIO:.0%})"
         )
 
-        return remaining
+        return usable_quota
 
     except httpx.TimeoutException:
-        logger.warning("Email-engine API timeout, skipping warmup check")
-        return None
+        logger.warning("Email-engine API timeout, pausing sends (fail-safe)")
+        return 0
     except Exception as e:
-        logger.warning(f"Warmup check failed: {e}, proceeding without limit")
-        return None
+        logger.warning(f"Warmup check failed: {e}, pausing sends (fail-safe)")
+        return 0

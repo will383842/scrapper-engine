@@ -102,8 +102,8 @@ if not st.session_state.authenticated:
 st.title("Scraper-Pro Admin")
 st.markdown("---")
 
-tab_jobs, tab_contacts, tab_articles, tab_stats, tab_whois, tab_config = st.tabs(
-    ["Jobs", "Contacts", "Articles", "Stats", "WHOIS Lookup", "Configuration"]
+tab_jobs, tab_contacts, tab_articles, tab_stats, tab_proxies, tab_whois, tab_config = st.tabs(
+    ["Jobs", "Contacts", "Articles", "Stats", "Proxies", "WHOIS Lookup", "Configuration"]
 )
 
 # ─── Tab 1: Jobs ─────────────────────────────────────
@@ -572,9 +572,15 @@ with tab_articles:
             art_lang = st.selectbox("Language", options=lang_options, key="art_lang")
 
         with col_f3:
-            art_sort = st.selectbox(
+            ALLOWED_SORT = {
+                "scraped_at DESC": "scraped_at DESC",
+                "word_count DESC": "word_count DESC",
+                "title ASC": "title ASC",
+                "date_published DESC": "date_published DESC",
+            }
+            art_sort_raw = st.selectbox(
                 "Sort by",
-                options=["scraped_at DESC", "word_count DESC", "title ASC", "date_published DESC"],
+                options=list(ALLOWED_SORT.keys()),
                 format_func=lambda x: {
                     "scraped_at DESC": "Newest scraped",
                     "word_count DESC": "Most words",
@@ -583,6 +589,8 @@ with tab_articles:
                 }.get(x, x),
                 key="art_sort",
             )
+            # Whitelist validation: only allow known sort clauses
+            art_sort = ALLOWED_SORT.get(art_sort_raw, "scraped_at DESC")
 
         # Build query
         where_clauses = []
@@ -815,7 +823,205 @@ with tab_stats:
         st.error(f"Database error: {e}")
 
 
-# ─── Tab 5: WHOIS Lookup ─────────────────────────────
+# ─── Tab 5: Proxies Health ──────────────────────────────
+
+with tab_proxies:
+    st.header("Proxy Health Monitor")
+
+    try:
+        # Récupérer les stats des proxies
+        proxies = query_df("""
+            SELECT proxy_url, proxy_type, provider, country,
+                   status, total_requests, successful_requests, failed_requests,
+                   success_rate, avg_response_ms, consecutive_failures,
+                   cooldown_until, last_used_at, created_at
+            FROM proxy_stats
+            ORDER BY success_rate DESC
+        """)
+
+        if proxies:
+            # Métriques clés
+            col1, col2, col3, col4 = st.columns(4)
+            active_count = sum(1 for p in proxies if p["status"] == "active")
+            blacklisted_count = sum(1 for p in proxies if p["status"] == "blacklisted")
+            cooldown_count = sum(1 for p in proxies if p["status"] == "cooldown")
+            avg_success = sum(p["success_rate"] or 0 for p in proxies) / len(proxies) if proxies else 0
+
+            col1.metric("Active Proxies", active_count)
+            col2.metric("Blacklisted", blacklisted_count, delta=f"-{blacklisted_count}" if blacklisted_count > 0 else None)
+            col3.metric("In Cooldown", cooldown_count)
+            col4.metric("Avg Success Rate", f"{avg_success:.1f}%")
+
+            # Tableau des proxies
+            st.subheader("Proxy List")
+
+            # Filtres
+            filter_col1, filter_col2 = st.columns(2)
+            with filter_col1:
+                status_filter = st.selectbox(
+                    "Status",
+                    options=["all", "active", "cooldown", "blacklisted"],
+                    key="proxy_status_filter",
+                )
+            with filter_col2:
+                provider_filter = st.selectbox(
+                    "Provider",
+                    options=["all"] + list(set(p["provider"] for p in proxies if p["provider"])),
+                    key="proxy_provider_filter",
+                )
+
+            # Appliquer les filtres
+            filtered_proxies = proxies
+            if status_filter != "all":
+                filtered_proxies = [p for p in filtered_proxies if p["status"] == status_filter]
+            if provider_filter != "all":
+                filtered_proxies = [p for p in filtered_proxies if p["provider"] == provider_filter]
+
+            # Afficher le tableau
+            st.dataframe(
+                filtered_proxies,
+                use_container_width=True,
+                column_config={
+                    "proxy_url": st.column_config.TextColumn("Proxy URL", width="medium"),
+                    "success_rate": st.column_config.ProgressColumn(
+                        "Success Rate",
+                        min_value=0,
+                        max_value=100,
+                        format="%.1f%%",
+                    ),
+                    "avg_response_ms": st.column_config.NumberColumn(
+                        "Avg Response (ms)",
+                        format="%d ms",
+                    ),
+                    "consecutive_failures": st.column_config.NumberColumn(
+                        "Consecutive Failures",
+                        format="%d",
+                    ),
+                },
+            )
+
+            # Actions admin
+            st.markdown("---")
+            st.subheader("Proxy Actions")
+
+            action_col1, action_col2 = st.columns(2)
+
+            with action_col1:
+                if st.button("🔄 Reset All Cooldowns", type="secondary"):
+                    try:
+                        engine = get_engine()
+                        with engine.connect() as conn:
+                            result = conn.execute(
+                                text("""
+                                    UPDATE proxy_stats
+                                    SET status = 'active',
+                                        cooldown_until = NULL,
+                                        consecutive_failures = 0
+                                    WHERE status = 'cooldown'
+                                """)
+                            )
+                            conn.commit()
+                        st.success(f"✅ Reset {result.rowcount} proxies")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+
+            with action_col2:
+                if st.button("🗑️ Clear Blacklist", type="secondary"):
+                    try:
+                        engine = get_engine()
+                        with engine.connect() as conn:
+                            result = conn.execute(
+                                text("""
+                                    UPDATE proxy_stats
+                                    SET status = 'active',
+                                        consecutive_failures = 0
+                                    WHERE status = 'blacklisted'
+                                """)
+                            )
+                            conn.commit()
+                        st.success(f"✅ Unblacklisted {result.rowcount} proxies")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+
+        else:
+            st.info("No proxy stats yet. Proxies will appear here after first use.")
+            st.markdown("""
+            **How to add proxies:**
+            1. Configure proxies in `config/proxy_config.json`
+            2. Set credentials in `.env` (`PROXY_USER`, `PROXY_PASS`)
+            3. Launch a scraping job
+            4. Proxies will be automatically tracked here
+            """)
+
+        # Graphique de performance (si données disponibles)
+        if proxies and len(proxies) > 0:
+            st.markdown("---")
+            st.subheader("Proxy Performance Chart")
+
+            # Préparer les données pour le graphique
+            import pandas as pd
+            df = pd.DataFrame(proxies)
+
+            if not df.empty:
+                # Graphique success rate par provider
+                provider_stats = df.groupby("provider").agg({
+                    "success_rate": "mean",
+                    "total_requests": "sum"
+                }).reset_index()
+
+                col_chart1, col_chart2 = st.columns(2)
+
+                with col_chart1:
+                    st.bar_chart(
+                        provider_stats.set_index("provider")["success_rate"],
+                        use_container_width=True,
+                    )
+                    st.caption("Average Success Rate by Provider")
+
+                with col_chart2:
+                    st.bar_chart(
+                        provider_stats.set_index("provider")["total_requests"],
+                        use_container_width=True,
+                    )
+                    st.caption("Total Requests by Provider")
+
+        # Alertes blacklist récentes
+        st.markdown("---")
+        st.subheader("Recent Blacklist Events")
+
+        try:
+            blacklist_events = query_df("""
+                SELECT error_type, error_message, url, proxy_used, created_at
+                FROM error_logs
+                WHERE error_type = 'blacklist'
+                ORDER BY created_at DESC
+                LIMIT 20
+            """)
+
+            if blacklist_events:
+                st.dataframe(
+                    blacklist_events,
+                    use_container_width=True,
+                    column_config={
+                        "created_at": st.column_config.DatetimeColumn(
+                            "Date",
+                            format="DD/MM/YYYY HH:mm",
+                        ),
+                    },
+                )
+            else:
+                st.info("No blacklist events detected yet. ✅")
+
+        except Exception as e:
+            st.warning(f"Could not load blacklist events: {e}")
+
+    except Exception as e:
+        st.error(f"Database error: {e}")
+
+
+# ─── Tab 6: WHOIS Lookup ─────────────────────────────
 
 with tab_whois:
     st.header("WHOIS Domain Lookup")
@@ -899,7 +1105,7 @@ with tab_whois:
         st.error(f"Database error: {e}")
 
 
-# ─── Tab 6: Configuration ────────────────────────────
+# ─── Tab 7: Configuration ────────────────────────────
 
 with tab_config:
     st.header("System Configuration")

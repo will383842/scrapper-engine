@@ -1,0 +1,179 @@
+# ========================================
+# DOCKER COMPOSE - AJOUTER SCRAPER-PRO
+# ========================================
+# À utiliser pour ajouter Scraper-Pro à côté de Backlink Engine
+# Partage PostgreSQL et Redis existants (bl-postgres, bl-redis)
+# ========================================
+
+version: '3.8'
+
+# ========================================
+# RÉSEAUX
+# ========================================
+networks:
+  # Se connecter au réseau existant de Backlink Engine
+  backlink-engine_default:
+    external: true
+    name: backlink-engine_default
+  # OU créer un nouveau réseau si nécessaire
+  scraper-network:
+    driver: bridge
+    name: scraper-network
+
+# ========================================
+# SERVICES SCRAPER-PRO
+# ========================================
+services:
+  # ==========================================
+  # Scraper API (FastAPI)
+  # ==========================================
+  scraper-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scraper-api
+    restart: unless-stopped
+
+    environment:
+      # Database (utilise bl-postgres existant)
+      DATABASE_URL: postgresql://${BL_POSTGRES_USER:-backlink}:${BL_POSTGRES_PASSWORD}@bl-postgres:5432/scraper_db
+
+      # Redis (utilise bl-redis existant, namespace 1)
+      REDIS_URL: redis://:${BL_REDIS_PASSWORD}@bl-redis:6379/1
+
+      # API
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      API_HMAC_SECRET: ${API_HMAC_SECRET}
+
+      # Scraping (OPTIMISÉ pour 2 vCPU avec Backlink Engine)
+      PROXY_ENABLED: "false"
+      DOWNLOAD_DELAY: "3.0"
+      CONCURRENT_REQUESTS: "2"  # Réduit à 2 (Backlink Engine + Scraper-Pro)
+      CONCURRENT_REQUESTS_PER_DOMAIN: "1"
+
+      # Throttling intelligent
+      AUTOTHROTTLE_ENABLED: "true"
+      AUTOTHROTTLE_START_DELAY: "2"
+      AUTOTHROTTLE_MAX_DELAY: "30"
+      SMART_THROTTLE_MIN_DELAY: "1.0"
+      SMART_THROTTLE_MAX_DELAY: "60.0"
+
+      # Logs
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+    ports:
+      - "8000:8000"
+
+    networks:
+      - backlink-engine_default
+      - scraper-network
+
+    # Limites RAM (max 400 MB)
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+          cpus: '0.6'
+        reservations:
+          memory: 200M
+          cpus: '0.4'
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ==========================================
+  # Scraper Worker (Scrapy)
+  # ==========================================
+  scraper-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scraper-worker
+    restart: unless-stopped
+
+    command: ["python", "-m", "scraper.worker"]
+
+    environment:
+      # Database (utilise bl-postgres existant)
+      DATABASE_URL: postgresql://${BL_POSTGRES_USER:-backlink}:${BL_POSTGRES_PASSWORD}@bl-postgres:5432/scraper_db
+
+      # Redis (utilise bl-redis existant, namespace 1)
+      REDIS_URL: redis://:${BL_REDIS_PASSWORD}@bl-redis:6379/1
+
+      # Scraping (OPTIMISÉ)
+      PROXY_ENABLED: "false"
+      DOWNLOAD_DELAY: "3.0"
+      CONCURRENT_REQUESTS: "2"  # Réduit pour partager CPU avec Backlink Engine
+      CONCURRENT_REQUESTS_PER_DOMAIN: "1"
+
+      # Throttling
+      AUTOTHROTTLE_ENABLED: "true"
+      SMART_THROTTLE_MIN_DELAY: "1.0"
+      SMART_THROTTLE_MAX_DELAY: "60.0"
+
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+    networks:
+      - backlink-engine_default
+      - scraper-network
+
+    # Limites RAM (max 700 MB)
+    deploy:
+      resources:
+        limits:
+          memory: 700M
+          cpus: '0.8'
+        reservations:
+          memory: 400M
+          cpus: '0.5'
+
+  # ==========================================
+  # Dashboard Streamlit
+  # ==========================================
+  scraper-dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: scraper-dashboard
+    restart: unless-stopped
+
+    environment:
+      # Database (utilise bl-postgres existant)
+      DATABASE_URL: postgresql://${BL_POSTGRES_USER:-backlink}:${BL_POSTGRES_PASSWORD}@bl-postgres:5432/scraper_db
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
+
+    ports:
+      - "8501:8501"
+
+    networks:
+      - backlink-engine_default
+      - scraper-network
+
+    # Limites RAM (max 350 MB)
+    deploy:
+      resources:
+        limits:
+          memory: 350M
+          cpus: '0.4'
+        reservations:
+          memory: 150M
+          cpus: '0.2'
+
+# ========================================
+# NOTES IMPORTANTES
+# ========================================
+# 1. Ce docker-compose s'intègre avec Backlink Engine existant
+# 2. Utilise bl-postgres et bl-redis (pas de duplication)
+# 3. Scraper-Pro aura sa propre base "scraper_db"
+# 4. Redis namespace 1 (Backlink = 0, Scraper = 1)
+# 5. CONCURRENT_REQUESTS réduit à 2 (partage CPU)
+#
+# Avant de démarrer :
+# - Créer la base scraper_db dans bl-postgres
+# - Configurer les credentials dans .env
+# - Appliquer les migrations SQL
+# ========================================

@@ -67,35 +67,37 @@ async def bounce_feedback(payload: BounceFeedbackRequest):
         raise HTTPException(status_code=400, detail="Invalid email domain")
 
     with get_db_session() as session:
-        # Mark contact as bounced
-        session.execute(
+        # Mark contact as bounced (idempotent — skip if already bounced)
+        result = session.execute(
             text("""
             UPDATE validated_contacts
             SET status = 'bounced', updated_at = NOW()
-            WHERE email = :email
+            WHERE email = :email AND status != 'bounced'
             """),
             {"email": email},
         )
 
-        # Update domain bounce stats (only increment bounce_count, not total_sent)
-        session.execute(
-            text("""
-            INSERT INTO email_domain_blacklist (domain, bounce_count, total_sent, bounce_rate)
-            VALUES (:domain, 1, 1, 100.0)
-            ON CONFLICT (domain) DO UPDATE SET
-                bounce_count = email_domain_blacklist.bounce_count + 1,
-                bounce_rate = CASE
-                    WHEN email_domain_blacklist.total_sent > 0
-                    THEN LEAST(
-                        (email_domain_blacklist.bounce_count + 1)::decimal
-                        / email_domain_blacklist.total_sent * 100,
-                        100.0
-                    )
-                    ELSE 100.0
-                END
-            """),
-            {"domain": domain},
-        )
+        # Only increment bounce stats if we actually changed the status
+        # (prevents double-counting on duplicate webhook deliveries)
+        if result.rowcount > 0:
+            session.execute(
+                text("""
+                INSERT INTO email_domain_blacklist (domain, bounce_count, total_sent, bounce_rate)
+                VALUES (:domain, 1, 1, 100.0)
+                ON CONFLICT (domain) DO UPDATE SET
+                    bounce_count = email_domain_blacklist.bounce_count + 1,
+                    bounce_rate = CASE
+                        WHEN email_domain_blacklist.total_sent > 0
+                        THEN LEAST(
+                            (email_domain_blacklist.bounce_count + 1)::decimal
+                            / email_domain_blacklist.total_sent * 100,
+                            100.0
+                        )
+                        ELSE 100.0
+                    END
+                """),
+                {"domain": domain},
+            )
 
     return {"status": "ok", "email": email, "bounce_type": bounce_type}
 

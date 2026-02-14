@@ -1,0 +1,103 @@
+# Alertmanager Configuration for Scraper-Pro
+
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: '${SMTP_HOST:?SMTP_HOST required}:${SMTP_PORT:-587}'
+  smtp_from: '${ALERT_EMAIL_FROM:?ALERT_EMAIL_FROM required}'
+  smtp_auth_username: '${SMTP_USER}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+
+# Templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Routing tree
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'team-email'
+
+  # Sub-routes
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'team-email'
+      repeat_interval: 1h
+
+    # Warning alerts - grouped notifications
+    - match:
+        severity: warning
+      receiver: 'team-email'
+      repeat_interval: 4h
+
+    # Info alerts - daily digest
+    - match:
+        severity: info
+      receiver: 'team-email'
+      repeat_interval: 24h
+
+# Receivers
+receivers:
+  # Email notifications
+  - name: 'team-email'
+    email_configs:
+      - to: '${ALERT_EMAIL_TO:?ALERT_EMAIL_TO required}'
+        headers:
+          Subject: '[Scraper-Pro] {{ .GroupLabels.alertname }}'
+        html: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; }
+              .alert { padding: 15px; margin: 10px 0; border-radius: 5px; }
+              .critical { background-color: #f8d7da; border-left: 5px solid #dc3545; }
+              .warning { background-color: #fff3cd; border-left: 5px solid #ffc107; }
+              .info { background-color: #d1ecf1; border-left: 5px solid #17a2b8; }
+              .resolved { background-color: #d4edda; border-left: 5px solid #28a745; }
+              h2 { margin: 0 0 10px 0; }
+              pre { background: #f5f5f5; padding: 10px; border-radius: 3px; }
+            </style>
+          </head>
+          <body>
+            <h1>Scraper-Pro Alerts</h1>
+            {{ range .Alerts }}
+            <div class="alert {{ .Labels.severity }}">
+              <h2>{{ .Labels.alertname }}</h2>
+              <p><strong>Status:</strong> {{ .Status }}</p>
+              <p><strong>Severity:</strong> {{ .Labels.severity }}</p>
+              <p><strong>Component:</strong> {{ .Labels.component }}</p>
+              <p><strong>Summary:</strong> {{ .Annotations.summary }}</p>
+              <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+              <p><strong>Started:</strong> {{ .StartsAt }}</p>
+              {{ if .EndsAt }}<p><strong>Ended:</strong> {{ .EndsAt }}</p>{{ end }}
+            </div>
+            {{ end }}
+          </body>
+          </html>
+
+  # Webhook (optionnel - Slack, Discord, etc.)
+  - name: 'webhook'
+    webhook_configs:
+      - url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        send_resolved: true
+
+# Inhibition rules
+inhibit_rules:
+  # Inhibit info alerts if there's a warning alert for the same component
+  - source_match:
+      severity: 'warning'
+    target_match:
+      severity: 'info'
+    equal: ['component', 'alertname']
+
+  # Inhibit warning alerts if there's a critical alert for the same component
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['component', 'alertname']
