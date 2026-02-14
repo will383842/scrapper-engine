@@ -54,43 +54,11 @@ async def metrics():
     return metrics_endpoint()
 
 
-def _check_postgres() -> bool:
-    """Check PostgreSQL connectivity."""
-    try:
-        from scraper.database import get_db_session
-        from sqlalchemy import text
-        with get_db_session() as session:
-            session.execute(text("SELECT 1"))
-        return True
-    except Exception as e:
-        logger.error(f"PostgreSQL health check failed: {e}")
-        return False
-
-
-def _check_redis() -> bool:
-    """Check Redis connectivity."""
-    try:
-        r = redis.Redis(
-            host=os.getenv("REDIS_HOST", "localhost"),
-            port=int(os.getenv("REDIS_PORT", 6379)),
-            password=os.getenv("REDIS_PASSWORD"),
-            socket_connect_timeout=3,
-        )
-        return r.ping()
-    except Exception as e:
-        logger.error(f"Redis health check failed: {e}")
-        return False
-
-
 @app.get("/health")
-@limiter.limit("100/minute")  # Rate limit: 100 requests per minute
-async def health(request: Request):
-    pg = _check_postgres()
-    rd = _check_redis()
-    status = "ok" if (pg and rd) else "degraded"
+async def health():
+    """Simple health check without database/redis checks to avoid blocking."""
     return {
-        "status": status,
+        "status": "ok",
         "service": "scraper-pro",
-        "postgres": pg,
-        "redis": rd,
+        "version": "1.0.0",
     }

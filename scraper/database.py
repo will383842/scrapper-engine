@@ -14,6 +14,12 @@ _lock = threading.Lock()
 
 
 def get_database_url() -> str:
+    # Prioritize DATABASE_URL if set (used in Docker)
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    # Fallback to individual variables
     host = os.getenv("POSTGRES_HOST", "localhost")
     port = os.getenv("POSTGRES_PORT", "5432")
     db = os.getenv("POSTGRES_DB", "scraper_db")
