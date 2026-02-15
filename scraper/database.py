@@ -41,6 +41,8 @@ def get_engine():
                     pool_size=10,
                     max_overflow=20,
                     pool_pre_ping=True,
+                    pool_timeout=30,  # Timeout after 30s if pool is full
+                    pool_recycle=3600,  # Recycle connections after 1h
                 )
     return _engine
 
