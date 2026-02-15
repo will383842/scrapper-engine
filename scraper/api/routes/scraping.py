@@ -1,6 +1,7 @@
 """API routes for scraping job management."""
 
 import json
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import text
@@ -11,6 +12,7 @@ from scraper.database import get_db_session
 from scraper.runner import run_spider, SPIDER_MAP
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/test-router")
@@ -62,72 +64,105 @@ async def create_job_simple(request: Request):
          "config": {"start_url": "https://example.com/blog", "max_articles": 100}
        }
     """
+    logger.info("🚀 [/jobs/simple] Request received")
+
     # Sécurité: localhost + réseau Docker
     client_host = request.client.host
+    logger.info(f"📍 [/jobs/simple] Client host: {client_host}")
+
     # Accepter localhost ET réseau Docker interne (172.18.x.x)
     is_localhost = client_host in ["127.0.0.1", "localhost", "::1"]
     is_docker_network = client_host.startswith("172.18.") or client_host.startswith("172.17.")
 
     if not (is_localhost or is_docker_network):
+        logger.warning(f"⛔ [/jobs/simple] Blocked IP: {client_host}")
         raise HTTPException(
             status_code=403,
             detail="Accessible depuis localhost ou réseau Docker uniquement"
         )
 
+    logger.info(f"✅ [/jobs/simple] IP validation passed")
+
     # Parser le JSON body
+    logger.info("📦 [/jobs/simple] Parsing JSON body...")
     try:
         body = await request.json()
         source_type = body.get("source_type")
         name = body.get("name")
         config = body.get("config")
         max_results = body.get("max_results", 100)
+        logger.info(f"✅ [/jobs/simple] JSON parsed: source_type={source_type}, name={name}")
     except Exception as e:
+        logger.error(f"❌ [/jobs/simple] JSON parse error: {e}")
         raise HTTPException(
             status_code=422,
             detail=f"Invalid JSON body: {str(e)}"
         )
 
     # Valider les champs requis
+    logger.info("🔍 [/jobs/simple] Validating required fields...")
     if not source_type or not name or not config:
+        logger.error(f"❌ [/jobs/simple] Missing fields: source_type={source_type}, name={name}, config={config}")
         raise HTTPException(
             status_code=422,
             detail="Missing required fields: source_type, name, config"
         )
+    logger.info("✅ [/jobs/simple] Required fields validated")
 
     # Valider source_type
+    logger.info(f"🔍 [/jobs/simple] Validating source_type '{source_type}'...")
     if source_type not in SPIDER_MAP:
+        logger.error(f"❌ [/jobs/simple] Invalid source_type: {source_type}")
         raise HTTPException(
             status_code=400,
             detail=f"Invalid source_type '{source_type}'. Must be one of: {list(SPIDER_MAP.keys())}"
         )
+    logger.info("✅ [/jobs/simple] source_type validated")
 
     # Ajouter max_results au config si applicable
+    logger.info("🔧 [/jobs/simple] Adjusting config with max_results...")
     if source_type in ["google_search", "google_maps"] and "max_results" not in config:
         config["max_results"] = max_results
     elif source_type == "blog_content" and "max_articles" not in config:
         config["max_articles"] = max_results
+    logger.info(f"✅ [/jobs/simple] Config adjusted: {config}")
 
     # Créer job sans HMAC
-    with get_db_session() as session:
-        result = session.execute(
-            text("""
-            INSERT INTO scraping_jobs
-                (name, source_type, config, auto_inject_mailwizz)
-            VALUES
-                (:name, :source_type, :config, :auto_inject)
-            RETURNING id
-            """),
-            {
-                "name": name,
-                "source_type": source_type,
-                "config": json.dumps(config),
-                "auto_inject": True,
-            },
-        )
-        job_id = result.scalar()
+    logger.info("💾 [/jobs/simple] Opening database session...")
+    try:
+        with get_db_session() as session:
+            logger.info("💾 [/jobs/simple] Database session opened, executing INSERT...")
+            result = session.execute(
+                text("""
+                INSERT INTO scraping_jobs
+                    (name, source_type, config, auto_inject_mailwizz)
+                VALUES
+                    (:name, :source_type, :config, :auto_inject)
+                RETURNING id
+                """),
+                {
+                    "name": name,
+                    "source_type": source_type,
+                    "config": json.dumps(config),
+                    "auto_inject": True,
+                },
+            )
+            logger.info("💾 [/jobs/simple] INSERT executed, fetching job_id...")
+            job_id = result.scalar()
+            logger.info(f"✅ [/jobs/simple] Job created in DB with ID: {job_id}")
+    except Exception as e:
+        logger.error(f"❌ [/jobs/simple] Database error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-    run_spider(job_id, source_type, config)
+    logger.info(f"🕷️ [/jobs/simple] Calling run_spider for job_id={job_id}...")
+    try:
+        run_spider(job_id, source_type, config)
+        logger.info(f"✅ [/jobs/simple] run_spider completed for job_id={job_id}")
+    except Exception as e:
+        logger.error(f"❌ [/jobs/simple] run_spider error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Spider launch error: {str(e)}")
 
+    logger.info(f"🎉 [/jobs/simple] Request completed successfully for job_id={job_id}")
     return {
         "success": True,
         "job_id": job_id,
