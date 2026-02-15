@@ -50,8 +50,7 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      scraper_network:
-        ipv4_address: 172.19.0.20
+      - scraper_network
 
   # Scraper + API (mode simple, pas de proxies)
   scraper:
