@@ -13,6 +13,12 @@ from scraper.runner import run_spider, SPIDER_MAP
 router = APIRouter()
 
 
+@router.post("/test-router")
+async def test_router():
+    """Test endpoint DANS le router pour diagnostiquer."""
+    return {"router_test": "success", "message": "Router POST works!"}
+
+
 @router.post("/jobs/simple")
 async def create_job_simple(request: Request):
     """
