@@ -70,9 +70,9 @@ async def create_job_simple(request: Request):
     client_host = request.client.host
     logger.info(f"📍 [/jobs/simple] Client host: {client_host}")
 
-    # Accepter localhost ET réseau Docker interne (172.18.x.x)
+    # Accepter localhost ET tous les réseaux Docker privés (172.x.x.x, 10.x.x.x)
     is_localhost = client_host in ["127.0.0.1", "localhost", "::1"]
-    is_docker_network = client_host.startswith("172.18.") or client_host.startswith("172.17.")
+    is_docker_network = client_host.startswith("172.") or client_host.startswith("10.")
 
     if not (is_localhost or is_docker_network):
         logger.warning(f"⛔ [/jobs/simple] Blocked IP: {client_host}")
