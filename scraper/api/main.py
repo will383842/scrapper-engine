@@ -63,3 +63,9 @@ async def health():
         "service": "scraper-pro",
         "version": "1.0.0",
     }
+
+
+@app.post("/test-minimal")
+async def test_minimal():
+    """Endpoint de test ULTRA minimal pour diagnostiquer le problème de timeout."""
+    return {"test": "success", "message": "POST works!"}
