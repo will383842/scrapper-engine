@@ -49,7 +49,8 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - scraper_network
+      scraper_network:
+        ipv4_address: 172.19.0.10
 
   # Scraper + API (mode simple, pas de proxies)
   scraper:
@@ -64,11 +65,14 @@ services:
       redis:
         condition: service_healthy
     environment:
+      # Database URL with fixed IP (fixes DNS resolution issue)
+      DATABASE_URL: postgresql://scraper_admin:ScraperPro2026SecurePassword!@172.19.0.10:5432/scraper_db
+
       # Mode simple
       SCRAPER_MODE: "simple"
       ENABLE_PROXIES: "false"
 
-      # Database
+      # Database (fallback)
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB:-scraper_db}
@@ -157,3 +161,7 @@ volumes:
 networks:
   scraper_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
+          gateway: 172.19.0.1
