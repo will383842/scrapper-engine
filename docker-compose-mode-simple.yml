@@ -31,7 +31,8 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - scraper_network
+      scraper_network:
+        ipv4_address: 172.19.0.10
 
   # Redis cache
   redis:
