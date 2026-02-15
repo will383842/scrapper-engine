@@ -36,13 +36,11 @@ def get_engine():
     if _engine is None:
         with _lock:
             if _engine is None:
+                from sqlalchemy.pool import NullPool
                 _engine = create_engine(
                     get_database_url(),
-                    pool_size=10,
-                    max_overflow=20,
-                    pool_pre_ping=True,
-                    pool_timeout=30,  # Timeout after 30s if pool is full
-                    pool_recycle=3600,  # Recycle connections after 1h
+                    poolclass=NullPool,  # No pooling to avoid blocking issues
+                    connect_args={'connect_timeout': 10}
                 )
     return _engine
 
